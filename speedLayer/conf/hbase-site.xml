@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+
+<configuration>
+  <property>
+    <name>hbase.rootdir</name>
+    <value>hdfs://10.0.2.5:8020/hbase</value>
+  </property>
+  <property>
+    <name>hbase.cluster.distributed</name>
+    <value>true</value>
+  </property>
+  <property>
+    <name>hbase.zookeeper.quorum</name>
+    <value>10.0.2.5:32181</value>
+  </property>
+  
+  <property>
+    <name>hbase.master.distributed.log.splitting</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>hbase.rest.port</name>
+    <value>8020</value>
+  </property>
+
+  <property>
+    <name>hbase.zookeeper.property.clientPort</name>
+    <value>2181</value>
+  </property>
+
+  <property>
+    <name>hbase.defaults.for.version.skip</name>
+    <value>true</value>
+  </property>
+
+  <property>
+    <name>hfile.index.block.max.size</name>
+    <value>131072</value>
+  </property>
+
+  <property>
+    <name>io.storefile.bloom.block.size</name>
+    <value>131072</value>
+  </property>
+
+</configuration>
