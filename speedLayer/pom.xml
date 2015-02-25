@@ -3,9 +3,14 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.se4450</groupId>
-	<artifactId>SpeedLayer</artifactId>
-	<version>0.0.1</version>
+	<artifactId>speedLayer</artifactId>
 	<packaging>jar</packaging>
+
+	<parent>
+		<groupId>com</groupId>
+		<artifactId>se4450</artifactId>
+		<version>LATEST</version>
+	</parent>
 
 	<name>SpeedLayer</name>
 	<url>http://maven.apache.org</url>
@@ -130,27 +135,14 @@
 				</exclusion>
 			</exclusions>
 		</dependency>
+		<dependency>
+			<groupId>${pom.groupId}</groupId>
+			<artifactId>shared</artifactId>
+			<version>LATEST</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>exec-maven-plugin</artifactId>
-				<executions>
-					<execution>
-						<goals>
-							<goal>exec</goal>
-						</goals>
-					</execution>
-				</executions>
-				<configuration>
-					<executable>java</executable>
-					<includeProjectDependencies>true</includeProjectDependencies>
-					<includePluginDependencies>false</includePluginDependencies>
-					<classpathScope>compile</classpathScope>
-					<mainClass>${storm.topology}</mainClass>
-				</configuration>
-			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
 				<artifactId>maven-compiler-plugin</artifactId>
@@ -158,34 +150,6 @@
 					<source>1.7</source>
 					<target>1.7</target>
 				</configuration>
-			</plugin>
-			<plugin>
-				<groupId>org.apache.maven.plugins</groupId>
-				<artifactId>maven-assembly-plugin</artifactId>
-				<version>2.4.1</version>
-				<configuration>
-					<!-- get all project dependencies -->
-					<descriptorRefs>
-						<descriptorRef>jar-with-dependencies</descriptorRef>
-					</descriptorRefs>
-					<!-- MainClass in mainfest make a executable jar -->
-					<archive>
-						<manifest>
-							<mainClass>com.se4450.SpeedLayer.SpeedLayerTopology</mainClass>
-						</manifest>
-					</archive>
-
-				</configuration>
-				<executions>
-					<execution>
-						<id>make-assembly</id>
-						<!-- bind to the packaging phase -->
-						<phase>package</phase>
-						<goals>
-							<goal>single</goal>
-						</goals>
-					</execution>
-				</executions>
 			</plugin>
 			<plugin>
 				<groupId>org.apache.maven.plugins</groupId>
