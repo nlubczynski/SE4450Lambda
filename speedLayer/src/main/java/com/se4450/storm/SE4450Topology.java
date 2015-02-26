@@ -2,6 +2,7 @@ package com.se4450.storm;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.joda.time.DateTime;
 
 import com.se4450.shared.Consts;
 
@@ -39,6 +40,9 @@ public class SE4450Topology {
 			hbConf.put("hbase.rootdir", args[0]);
 		}
 		conf.put("hbase.conf", hbConf);
+		
+		// Add serialization for DateTime
+		conf.registerSerialization(DateTime.class);
 
 		// If there are arguments, we are running on a cluster
 		if (args != null && args.length > 0) {
