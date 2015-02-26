@@ -9,9 +9,9 @@
 	<parent>
 		<groupId>com</groupId>
 		<artifactId>se4450</artifactId>
-		<version>LATEST</version>
+		<version>0.0.1</version>
 	</parent>
-
+	
 	<name>hadoop</name>
 	<url>http://maven.apache.org</url>
 
@@ -28,7 +28,7 @@
 		</dependency>
 
 		<dependency>
-			<groupId>${pom.groupId}</groupId>
+			<groupId>${project.groupId}</groupId>
 			<artifactId>shared</artifactId>
 			<version>LATEST</version>
 		</dependency>

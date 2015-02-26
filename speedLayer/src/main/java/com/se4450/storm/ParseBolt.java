@@ -10,8 +10,9 @@ import backtype.storm.tuple.Tuple;
 import backtype.storm.tuple.Values;
 
 /**
- * A Bolt that takes incoming Kafka strings, and parses them into sensorID,
- * sensorValue, and timestamp
+ * A Bolt that takes incoming Kafka strings, and parses them into
+ * SE4450Topology.PARSING_BOLT_ID, SE4450Topology.PARSING_BOLT_VALUE, and
+ * SE4450Topology.PARSING_BOLT_TIME
  * 
  * @author NikLubz
  *
@@ -20,7 +21,6 @@ public class ParseBolt extends BaseBasicBolt {
 
 	private static final long serialVersionUID = 1353253736861496000L;
 
-	@Override
 	public void execute(Tuple tuple, BasicOutputCollector collector) {
 		// Get the string
 		String input = tuple.getString(0);
@@ -29,7 +29,7 @@ public class ParseBolt extends BaseBasicBolt {
 		String[] inputs = input.split(" ");
 		if (inputs.length != 3)
 			return;
-		
+
 		int sensorID, sensorValue;
 		DateTime timestamp;
 
@@ -39,17 +39,19 @@ public class ParseBolt extends BaseBasicBolt {
 			sensorValue = Integer.parseInt(inputs[1]);
 			timestamp = new DateTime(Long.parseLong(inputs[2]) * 1000L);
 		} catch (Exception e) {
-			// if there are any errors parsing, throw out the data			
+			// if there are any errors parsing, throw out the data
 			return;
 		}
-		
+
 		// Emit values
-		collector.emit("formattedStream", new Values(sensorID, sensorValue, timestamp));
+		collector.emit(SE4450Topology.PARSING_BOLT_STREAM, new Values(sensorID,
+				sensorValue, timestamp));
 	}
 
-	@Override
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declareStream("formattedStream", new Fields("sensorID",
-				"sensorValue", "timestamp"));
+		declarer.declareStream(SE4450Topology.PARSING_BOLT_STREAM, new Fields(
+				SE4450Topology.PARSING_BOLT_ID,
+				SE4450Topology.PARSING_BOLT_VALUE,
+				SE4450Topology.PARSING_BOLT_TIME));
 	}
 }

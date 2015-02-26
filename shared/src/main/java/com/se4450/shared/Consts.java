@@ -16,7 +16,12 @@ public final class Consts {
 	public static final String KAFKA_TOPIC = "sensorData";
 
 	/* Storm */
-	// Topology config
-	public static final int KAFKA_SPOUT_PARALLELISM = 5;
-	public static final int FORMAT_BOLT_PARALLELISM = 5;
+	// Topology configuration
+	public static final int STOME_KAFKA_SPOUT_PARALLELISM = 5;
+	public static final int STORM_FORMAT_BOLT_PARALLELISM = 5;
+	public static final int STORM_HBASE_SENSOR_BOLT_PARALLELISM = 10;
+	
+	/* HBase*/
+	public static final String HBASE_TABLE_NAME_SENSORS_SPEED_LAYER = "SensorValuesSpeedLayer";
+	public static final String HBASE_COLUMN_FAMILY_SPEED_LAYER = "d";
 }

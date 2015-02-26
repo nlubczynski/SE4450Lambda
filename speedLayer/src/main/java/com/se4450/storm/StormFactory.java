@@ -3,9 +3,7 @@ package com.se4450.storm;
 import java.util.UUID;
 
 import org.apache.storm.hbase.bolt.HBaseBolt;
-import org.apache.storm.hbase.bolt.mapper.HBaseMapper;
 import org.apache.storm.hbase.bolt.mapper.SimpleHBaseMapper;
-import org.apache.storm.hbase.common.ColumnList;
 
 import com.se4450.shared.Consts;
 
@@ -28,8 +26,8 @@ public class StormFactory {
 
 	/**
 	 * 
-	 * @return KafkaSpout A KafkaSpout configured to communicate with the Kafka
-	 *         host configured in com.se4450.shared.Consts
+	 * @return A KafkaSpout configured to communicate with the Kafka host
+	 *         configured in com.se4450.shared.Consts
 	 */
 	public static KafkaSpout getKafkaSpout() {
 		BrokerHosts hosts = new ZkHosts(Consts.KAFKA_HOST_IP
@@ -42,15 +40,22 @@ public class StormFactory {
 		return new KafkaSpout(spoutConfig);
 	}
 
+	/**
+	 * 
+	 * @return An HBaseBolt configured to write to the Sensor values HBase table
+	 *         set in com.se4450.shared.Consts. It's configured to expect the
+	 *         values from emitted from a SensorToHBase bolt.
+	 */
 	public static HBaseBolt getSensorDataHBaseBolt() {
 
+		// Create a SimpleHBaseMapper with the values from a SensorToHBase bolt
 		SimpleHBaseMapper mapper = new SimpleHBaseMapper()
-				.withColumnFields(new Fields("key"))
-				.withColumnFields(new Fields("value"))
-				.withColumnFamily("d");
-		
-		HBaseBolt hbase = new HBaseBolt("WordCount", mapper);
+				.withColumnFields(new Fields(SE4450Topology.HBASE_SENSOR_KEY))
+				.withColumnFields(new Fields(SE4450Topology.HBASE_SENSOR_VALUE))
+				.withColumnFamily(Consts.HBASE_COLUMN_FAMILY_SPEED_LAYER);
 
-		return null;
+		return new HBaseBolt(Consts.HBASE_TABLE_NAME_SENSORS_SPEED_LAYER,
+				mapper);
+
 	}
 }
