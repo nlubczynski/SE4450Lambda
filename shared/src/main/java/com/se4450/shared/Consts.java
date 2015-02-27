@@ -20,6 +20,7 @@ public final class Consts {
 	public static final int STOME_KAFKA_SPOUT_PARALLELISM = 5;
 	public static final int STORM_FORMAT_BOLT_PARALLELISM = 5;
 	public static final int STORM_HBASE_SENSOR_BOLT_PARALLELISM = 10;
+	public static final int STORM_NUMBER_OF_WORKERS = 3;
 	
 	/* HBase*/
 	public static final String HBASE_TABLE_NAME_SENSORS_SPEED_LAYER = "SensorValuesSpeedLayer";

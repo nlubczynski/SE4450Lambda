@@ -23,14 +23,14 @@ public class SensorToHBase extends BaseBasicBolt {
 		// Make a nice string
 		String key = sensorID + "-" + timestamp;
 
-		collector.emit(SE4450Topology.HBASE_SENSOR_STREAM, new Values(key,
+		collector.emit(SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_STREAM, new Values(key,
 				sensorValue));
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declareStream(SE4450Topology.HBASE_SENSOR_STREAM, new Fields(
-				SE4450Topology.HBASE_SENSOR_KEY,
-				SE4450Topology.HBASE_SENSOR_VALUE));
+		declarer.declareStream(SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_STREAM, new Fields(
+				SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_KEY,
+				SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_VALUE));
 	}
 
 }

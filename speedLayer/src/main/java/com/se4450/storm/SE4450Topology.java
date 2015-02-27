@@ -24,10 +24,12 @@ public class SE4450Topology {
 	public static final String PARSING_BOLT_VALUE = "sensorValue";
 	public static final String PARSING_BOLT_TIME = "sensorTimestamp";
 
+	public static final String FORMAT_SENSOR_TO_HBASE_BOLT = "formatSensorToHbase";
+	public static final String FORMAT_SENSOR_TO_HBASE_BOLT_STREAM = "formatSensorToHbaseStream";
+	public static final String FORMAT_SENSOR_TO_HBASE_BOLT_KEY = "formatSensorToHbaseKey";
+	public static final String FORMAT_SENSOR_TO_HBASE_BOLT_VALUE = "formatSensorToHbaseValue";
+
 	public static final String HBASE_SENSOR_BOLT = "hbaseSensor";
-	public static final String HBASE_SENSOR_STREAM = "hbaseSensorStream";
-	public static final String HBASE_SENSOR_KEY = "hbaseSensorKey";
-	public static final String HBASE_SENSOR_VALUE = "hbaseSensorValue";
 
 	// Entry point for the topology
 	public static void main(String[] args) throws Exception {
@@ -42,17 +44,16 @@ public class SE4450Topology {
 			hbConf.put("hbase.rootdir", args[0]);
 		}
 		conf.put("hbase.conf", hbConf);
-		
+
 		// Add serialization for DateTime
 		conf.registerSerialization(DateTime.class);
 
 		// If there are arguments, we are running on a cluster
 		if (args != null && args.length > 0) {
 			// parallelism hint to set the number of workers
-			conf.setNumWorkers(3);
+			conf.setNumWorkers(Consts.STORM_NUMBER_OF_WORKERS);
 			// submit the topology
-			StormSubmitter.submitTopology(args[0], conf,
-					createTopology());
+			StormSubmitter.submitTopology(args[0], conf, createTopology());
 		}
 		// Otherwise, we are running locally
 		else {
@@ -87,13 +88,22 @@ public class SE4450Topology {
 				Consts.STORM_FORMAT_BOLT_PARALLELISM).shuffleGrouping(
 				KAFKA_SPOUT);
 
+		// Add SenstorToHBase to format sensor data for HBase
+		// reads from PARSING_BOLT : PARSING_BOLT_STREAM
+		// outputs parsed data in the form (string:key, string:value) to
+		// FORMAT_SENSOR_TO_HBASE_BOLT
+		builder.setBolt(FORMAT_SENSOR_TO_HBASE_BOLT, new SensorToHBase(),
+				Consts.STORM_HBASE_SENSOR_BOLT_PARALLELISM).shuffleGrouping(
+				PARSING_BOLT, PARSING_BOLT_STREAM);
+
 		// Add HBaseBolt to right raw sensor data to HBase table
 		// reads from PARSING_BOLT
 		// outputs nothing
 		builder.setBolt(HBASE_SENSOR_BOLT,
 				StormFactory.getSensorDataHBaseBolt(),
-				Consts.STORM_HBASE_SENSOR_BOLT_PARALLELISM).shuffleGrouping(
-				PARSING_BOLT, PARSING_BOLT_STREAM);
+				Consts.STORM_HBASE_SENSOR_BOLT_PARALLELISM)
+				.shuffleGrouping(FORMAT_SENSOR_TO_HBASE_BOLT,
+						FORMAT_SENSOR_TO_HBASE_BOLT_STREAM);
 
 		return builder.createTopology();
 	}

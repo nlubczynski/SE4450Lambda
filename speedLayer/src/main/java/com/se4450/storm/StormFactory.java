@@ -50,8 +50,8 @@ public class StormFactory {
 
 		// Create a SimpleHBaseMapper with the values from a SensorToHBase bolt
 		SimpleHBaseMapper mapper = new SimpleHBaseMapper()
-				.withColumnFields(new Fields(SE4450Topology.HBASE_SENSOR_KEY))
-				.withColumnFields(new Fields(SE4450Topology.HBASE_SENSOR_VALUE))
+				.withColumnFields(new Fields(SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_KEY))
+				.withColumnFields(new Fields(SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_VALUE))
 				.withColumnFamily(Consts.HBASE_COLUMN_FAMILY_SPEED_LAYER);
 
 		return new HBaseBolt(Consts.HBASE_TABLE_NAME_SENSORS_SPEED_LAYER,
