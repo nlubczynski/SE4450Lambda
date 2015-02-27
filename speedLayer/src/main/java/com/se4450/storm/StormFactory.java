@@ -55,7 +55,6 @@ public class StormFactory {
 				.withColumnFamily(Consts.HBASE_COLUMN_FAMILY_SPEED_LAYER);
 
 		return new HBaseBolt(Consts.HBASE_TABLE_NAME_SENSORS_SPEED_LAYER,
-				mapper);
-
+				mapper).withConfigKey("hbase.conf");
 	}
 }
