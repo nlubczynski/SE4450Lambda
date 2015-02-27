@@ -30,7 +30,7 @@ public class StormFactory {
 	 *         configured in com.se4450.shared.Consts
 	 */
 	public static KafkaSpout getKafkaSpout() {
-		BrokerHosts hosts = new ZkHosts(Consts.KAFKA_HOST_IP
+		BrokerHosts hosts = new ZkHosts(Consts.KAFKA_HOST_IP + ":"
 				+ Consts.KAFKA_HOST_PORT);
 
 		SpoutConfig spoutConfig = new SpoutConfig(hosts, Consts.KAFKA_TOPIC,
@@ -44,12 +44,13 @@ public class StormFactory {
 	 * 
 	 * @return An HBaseBolt configured to write to the Sensor values HBase table
 	 *         set in com.se4450.shared.Consts. It's configured to expect the
-	 *         values from emitted from a SensorToHBase bolt.
+	 *         values emitted from a SensorToHBase bolt.
 	 */
 	public static HBaseBolt getSensorDataHBaseBolt() {
 
 		// Create a SimpleHBaseMapper with the values from a SensorToHBase bolt
 		SimpleHBaseMapper mapper = new SimpleHBaseMapper()
+				.withRowKeyField(SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_KEY)
 				.withColumnFields(new Fields(SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_KEY))
 				.withColumnFields(new Fields(SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_VALUE))
 				.withColumnFamily(Consts.HBASE_COLUMN_FAMILY_SPEED_LAYER);

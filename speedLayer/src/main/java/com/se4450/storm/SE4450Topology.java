@@ -4,6 +4,9 @@ package com.se4450.storm;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
+
 import org.joda.time.DateTime;
 
 import com.se4450.shared.Consts;
@@ -12,11 +15,17 @@ import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.StormSubmitter;
 import backtype.storm.generated.StormTopology;
+import backtype.storm.spout.SpoutOutputCollector;
+import backtype.storm.task.TopologyContext;
+import backtype.storm.topology.IRichSpout;
+import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.TopologyBuilder;
+import backtype.storm.tuple.Fields;
+import backtype.storm.tuple.Values;
 
 public class SE4450Topology {
 
-	public static final String KAFKA_SPOUT = "incomingData";
+	public static final String KAFKA_SPOUT = "kafkaSpout";
 
 	public static final String PARSING_BOLT = "parsedData";
 	public static final String PARSING_BOLT_STREAM = "parsedStream";
@@ -41,7 +50,12 @@ public class SE4450Topology {
 		// hbase configuration
 		Map<String, Object> hbConf = new HashMap<String, Object>();
 		if (args.length > 0) {
-			hbConf.put("hbase.rootdir", args[0]);
+			hbConf.put("hbase.tmp.dir", "/home/hduser/hbase/tmp");
+			hbConf.put("hbase.rootdir", "hdfs://192.168.66.60/hbase");
+			hbConf.put("hbase.cluster.distributed", "true");
+			hbConf.put("hbase.local.dir", "/home/hduser/hbase/local");
+			hbConf.put("hbase.master.info.port", "6010");
+			hbConf.put("hbase.zookeeper.quorum", "192.168.66.71,192.168.66.72,192.168.66.73");
 		}
 		conf.put("hbase.conf", hbConf);
 
@@ -70,6 +84,7 @@ public class SE4450Topology {
 			cluster.shutdown();
 		}
 	}
+	
 
 	public static StormTopology createTopology() {
 		// Create builder
@@ -77,8 +92,11 @@ public class SE4450Topology {
 
 		// Add Kafka spout
 		// outputs raw strings from the Kafka queue to KAFKA_SPOUT
-		builder.setSpout(KAFKA_SPOUT, StormFactory.getKafkaSpout(),
-				Consts.STOME_KAFKA_SPOUT_PARALLELISM);
+		/*builder.setSpout(KAFKA_SPOUT, StormFactory.getKafkaSpout(),
+				Consts.STOME_KAFKA_SPOUT_PARALLELISM);*/
+		
+		builder.setSpout(KAFKA_SPOUT, new FakeKafkaSpout(),
+				Consts.STORM_KAFKA_SPOUT_PARALLELISM);
 
 		// Add ParseBolt to split/format incoming Kafka stream
 		// reads from KAFKA_SPOUT
