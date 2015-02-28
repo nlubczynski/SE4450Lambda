@@ -11,7 +11,7 @@
 		<artifactId>se4450</artifactId>
 		<version>0.0.1</version>
 	</parent>
-	
+
 	<name>hadoop</name>
 	<url>http://maven.apache.org</url>
 
@@ -26,12 +26,22 @@
 			<version>3.8.1</version>
 			<scope>test</scope>
 		</dependency>
-
 		<dependency>
 			<groupId>${project.groupId}</groupId>
 			<artifactId>shared</artifactId>
 			<version>LATEST</version>
 		</dependency>
-		
 	</dependencies>
+
+	<build>
+		<plugins>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.7</source>
+					<target>1.7</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 </project>

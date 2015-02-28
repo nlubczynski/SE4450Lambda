@@ -4,9 +4,7 @@ import java.util.UUID;
 
 import org.apache.storm.hbase.bolt.HBaseBolt;
 import org.apache.storm.hbase.bolt.mapper.SimpleHBaseMapper;
-
 import com.se4450.shared.Consts;
-
 import backtype.storm.spout.SchemeAsMultiScheme;
 import backtype.storm.tuple.Fields;
 import storm.kafka.BrokerHosts;
@@ -22,7 +20,7 @@ import storm.kafka.ZkHosts;
  * @author Nik Lubczynski
  *
  */
-public class StormFactory {
+public class TopologyUtilities {
 
 	/**
 	 * 
@@ -51,11 +49,10 @@ public class StormFactory {
 		// Create a SimpleHBaseMapper with the values from a SensorToHBase bolt
 		SimpleHBaseMapper mapper = new SimpleHBaseMapper()
 				.withRowKeyField(SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_KEY)
-				.withColumnFields(new Fields(SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_KEY))
 				.withColumnFields(new Fields(SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_VALUE))
 				.withColumnFamily(Consts.HBASE_COLUMN_FAMILY_SPEED_LAYER);
 
 		return new HBaseBolt(Consts.HBASE_TABLE_NAME_SENSORS_SPEED_LAYER,
-				mapper).withConfigKey("hbase.conf");
+				mapper).withConfigKey(Consts.STORM_HBASE_CONF_FILE);
 	}
 }
