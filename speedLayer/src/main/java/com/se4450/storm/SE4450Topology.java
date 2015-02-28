@@ -4,9 +4,11 @@ package com.se4450.storm;
 
 import java.util.HashMap;
 import java.util.Map;
+
 import org.joda.time.DateTime;
 
 import com.se4450.shared.Consts;
+import com.se4450.shared.HBaseUtils;
 
 import backtype.storm.Config;
 import backtype.storm.LocalCluster;
@@ -27,7 +29,7 @@ public class SE4450Topology {
 	public static final String FORMAT_SENSOR_TO_HBASE_BOLT = "formatSensorToHbase";
 	public static final String FORMAT_SENSOR_TO_HBASE_BOLT_STREAM = "formatSensorToHbaseStream";
 	public static final String FORMAT_SENSOR_TO_HBASE_BOLT_KEY = "formatSensorToHbaseKey";
-	public static final String FORMAT_SENSOR_TO_HBASE_BOLT_VALUE = "formatSensorToHbaseValue";
+	public static final String FORMAT_SENSOR_TO_HBASE_BOLT_VALUE = "SensorValue";
 
 	public static final String HBASE_SENSOR_BOLT = "hbaseSensor";
 
@@ -40,15 +42,8 @@ public class SE4450Topology {
 
 		// hbase configuration
 		Map<String, Object> hbConf = new HashMap<String, Object>();
-		if (args.length > 0) {
-			hbConf.put("hbase.tmp.dir", "/home/hduser/hbase/tmp");
-			hbConf.put("hbase.rootdir", "hdfs://192.168.66.60/hbase");
-			hbConf.put("hbase.cluster.distributed", "true");
-			hbConf.put("hbase.local.dir", "/home/hduser/hbase/local");
-			hbConf.put("hbase.master.info.port", "6010");
-			hbConf.put("hbase.zookeeper.quorum", "192.168.66.71,192.168.66.72,192.168.66.73");
-		}
-		conf.put("hbase.conf", hbConf);
+		if(HBaseUtils.LoadHBaseSiteData(Consts.STORM_HBASE_SITE_XML, hbConf))
+			conf.put(Consts.STORM_HBASE_CONF_FILE, hbConf);
 
 		// Add serialization for DateTime
 		conf.registerSerialization(DateTime.class);
@@ -58,7 +53,7 @@ public class SE4450Topology {
 			// parallelism hint to set the number of workers
 			conf.setNumWorkers(Consts.STORM_NUMBER_OF_WORKERS);
 			// submit the topology
-			StormSubmitter.submitTopology(args[0], conf, createTopology());
+			StormSubmitter.submitTopology(Consts.STORM_TOPOLOGY_NAME, conf, createTopology());
 		}
 		// Otherwise, we are running locally
 		else {
@@ -68,7 +63,7 @@ public class SE4450Topology {
 			// LocalCluster is used to run locally
 			LocalCluster cluster = new LocalCluster();
 			// submit the topology
-			cluster.submitTopology("speedLayer", conf, createTopology());
+			cluster.submitTopology(Consts.STORM_TOPOLOGY_NAME, conf, createTopology());
 			// sleep
 			Thread.sleep(10000);
 			// shut down the cluster
@@ -109,7 +104,7 @@ public class SE4450Topology {
 		// reads from PARSING_BOLT
 		// outputs nothing
 		builder.setBolt(HBASE_SENSOR_BOLT,
-				StormFactory.getSensorDataHBaseBolt(),
+				TopologyUtilities.getSensorDataHBaseBolt(),
 				Consts.STORM_HBASE_SENSOR_BOLT_PARALLELISM)
 				.shuffleGrouping(FORMAT_SENSOR_TO_HBASE_BOLT,
 						FORMAT_SENSOR_TO_HBASE_BOLT_STREAM);

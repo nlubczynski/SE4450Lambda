@@ -7,7 +7,7 @@
     </property>
     <property>
         <name>hbase.rootdir</name>
-        <value>hdfs://192.168.66.60/hbase</value>
+        <value>hdfs://master/hbase</value>
     </property>
     <property>
         <name>hbase.cluster.distributed</name>
@@ -23,6 +23,6 @@
     </property>
     <property>
         <name>hbase.zookeeper.quorum</name>
-        <value>192.168.66.71,192.168.66.72,192.168.66.73</value>
+        <value>zookeeper-1,zookeeper-2,zookeeper-3,</value>
     </property>
 </configuration>

@@ -17,13 +17,17 @@ public final class Consts {
 
 	/* Storm */
 	// Topology configuration
-	public static final int STORM_KAFKA_SPOUT_PARALLELISM = 5;
+	public static final String STORM_TOPOLOGY_NAME = "SpeedLayer";
+	public static final String STORM_HBASE_CONF_FILE = "hbase.conf";
+	public static final String STORM_HBASE_SITE_XML = "conf/hbase-site.xml";			
+	public static final int STORM_KAFKA_SPOUT_PARALLELISM = 2;
 	public static final int STORM_FORMAT_BOLT_PARALLELISM = 5;
 	public static final int STORM_HBASE_SENSOR_BOLT_PARALLELISM = 10;
-	public static final int STORM_NUMBER_OF_WORKERS = 3;
+	public static final int STORM_NUMBER_OF_WORKERS = 5;
+	
 	
 	/* HBase*/
 	public static final String HBASE_TABLE_NAME_SENSORS_SPEED_LAYER = "SensorValuesSpeedLayer";
 	public static final String HBASE_COLUMN_FAMILY_SPEED_LAYER = "d";
-	public static final String HBASE_ROOT_DIR = "hdfs://192.168.66.60/hbase";
+	
 }
