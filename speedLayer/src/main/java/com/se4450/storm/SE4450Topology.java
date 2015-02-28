@@ -4,9 +4,6 @@ package com.se4450.storm;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
-
 import org.joda.time.DateTime;
 
 import com.se4450.shared.Consts;
@@ -15,13 +12,7 @@ import backtype.storm.Config;
 import backtype.storm.LocalCluster;
 import backtype.storm.StormSubmitter;
 import backtype.storm.generated.StormTopology;
-import backtype.storm.spout.SpoutOutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.IRichSpout;
-import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.TopologyBuilder;
-import backtype.storm.tuple.Fields;
-import backtype.storm.tuple.Values;
 
 public class SE4450Topology {
 
