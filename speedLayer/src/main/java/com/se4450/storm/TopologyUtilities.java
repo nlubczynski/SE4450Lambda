@@ -28,7 +28,7 @@ public class TopologyUtilities {
 	 *         configured in com.se4450.shared.Consts
 	 */
 	public static KafkaSpout getKafkaSpout() {
-		BrokerHosts hosts = new ZkHosts(Consts.KAFKA_HOST_IP + ":"
+		BrokerHosts hosts = new ZkHosts(Consts.Storm_Zookeeper1 + ":"
 				+ Consts.KAFKA_HOST_PORT);
 
 		SpoutConfig spoutConfig = new SpoutConfig(hosts, Consts.KAFKA_TOPIC,
@@ -49,7 +49,9 @@ public class TopologyUtilities {
 		// Create a SimpleHBaseMapper with the values from a SensorToHBase bolt
 		SimpleHBaseMapper mapper = new SimpleHBaseMapper()
 				.withRowKeyField(SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_KEY)
-				.withColumnFields(new Fields(SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_VALUE))
+				.withColumnFields(
+						new Fields(
+								SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_VALUE))
 				.withColumnFamily(Consts.HBASE_COLUMN_FAMILY_SPEED_LAYER);
 
 		return new HBaseBolt(Consts.HBASE_TABLE_NAME_SENSORS_SPEED_LAYER,

@@ -78,12 +78,9 @@ public class SE4450Topology {
 
 		// Add Kafka spout
 		// outputs raw strings from the Kafka queue to KAFKA_SPOUT
-		/*builder.setSpout(KAFKA_SPOUT, StormFactory.getKafkaSpout(),
-				Consts.STOME_KAFKA_SPOUT_PARALLELISM);*/
-		
-		builder.setSpout(KAFKA_SPOUT, new FakeKafkaSpout(),
+		builder.setSpout(KAFKA_SPOUT, TopologyUtilities.getKafkaSpout(),
 				Consts.STORM_KAFKA_SPOUT_PARALLELISM);
-
+		
 		// Add ParseBolt to split/format incoming Kafka stream
 		// reads from KAFKA_SPOUT
 		// outputs parsed data in the form (int:sensorID, int:sensorValue,
