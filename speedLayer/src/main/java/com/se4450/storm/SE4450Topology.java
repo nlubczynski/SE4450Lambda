@@ -1,7 +1,5 @@
 package com.se4450.storm;
 
-// com.se4450.storm.SE4450Topology
-
 import java.util.HashMap;
 import java.util.Map;
 
@@ -71,7 +69,6 @@ public class SE4450Topology {
 		}
 	}
 	
-
 	public static StormTopology createTopology() {
 		// Create builder
 		TopologyBuilder builder = new TopologyBuilder();
@@ -97,7 +94,7 @@ public class SE4450Topology {
 				Consts.STORM_HBASE_SENSOR_BOLT_PARALLELISM).shuffleGrouping(
 				PARSING_BOLT, PARSING_BOLT_STREAM);
 
-		// Add HBaseBolt to right raw sensor data to HBase table
+		// Add HBaseBolt to write raw sensor data to HBase table
 		// reads from PARSING_BOLT
 		// outputs nothing
 		builder.setBolt(HBASE_SENSOR_BOLT,
