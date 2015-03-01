@@ -27,8 +27,6 @@ public final class Consts {
 	public static final String HBase_Slave1 = "slave-1";
 	public static final String HBase_Slave2 = "slave-2";
 	public static final String HBase_Slave3 = "slave-3";
-	
-	
 
 	/* Kafka */
 	// Connection data
