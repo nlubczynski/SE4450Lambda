@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
+<configuration>
+    <property>
+        <name>hbase.tmp.dir</name>
+        <value>/home/hduser/hbase/tmp</value>
+    </property>
+    <property>
+        <name>hbase.rootdir</name>
+        <value>hdfs://master/hbase</value>
+    </property>
+    <property>
+        <name>hbase.cluster.distributed</name>
+        <value>true</value>
+    </property>
+    <property>
+        <name>hbase.local.dir</name>
+        <value>/home/hduser/hbase/local</value>
+    </property>
+    <property>
+        <name>hbase.master.info.port</name>
+        <value>6010</value>
+    </property>
+    <property>
+        <name>hbase.zookeeper.quorum</name>
+        <value>zookeeper-1,zookeeper-2,zookeeper-3,</value>
+    </property>
+</configuration>
