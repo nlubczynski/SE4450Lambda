@@ -18,6 +18,6 @@ The system is being designed to handle streaming data in the form of sensor read
 
 
 ## Authors
-Brandon McRae
-Nik Lubczynski
-Braden Lunn
+Brandon McRae  
+Nik Lubczynski  
+Braden Lunn  
