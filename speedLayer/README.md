@@ -4,11 +4,11 @@ An implementation of Storm to handle real-time data processing for the Lambda Ar
 
 ## System Design
 
-1. Messages are sent to the system through Kafka, under the "sensorData" topic, in the format "<sensorID> <sensorValue> <unix timestamp>".
+1. Messages are sent to the system through Kafka, under the "sensorData" topic, in the format "sensorID sensorValue unix timestamp".
 2. The storm topology handles the incoming information
---* Writing the raw values to the HDFS
---* Processing the data, calculating averages, aggregating data, and other data processing tasks.
---* Write the processed data to the HBase table "SensorValuesSpeedLayer"
+  * Writing the raw values to the HDFS
+  * Processing the data, calculating averages, aggregating data, and other data processing tasks.
+  * Write the processed data to the HBase table "SensorValuesSpeedLayer"
 
 ## Project
 
