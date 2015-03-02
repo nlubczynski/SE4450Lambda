@@ -1,0 +1,24 @@
+# Master Hosts file
+# append after any local host configs, (eg, 127.0.0.0)
+
+# HBase
+192.168.66.60   master
+192.168.66.63   slave-3				
+192.168.66.73   zookeeper-3
+192.168.66.71   zookeeper-1
+192.168.66.72   zookeeper-2
+192.168.66.62   slave-2
+192.168.66.61   slave-1
+
+# Storm
+10.0.0.103      supervisor3
+10.0.0.242      zookeeper2
+10.0.0.241      zookeeper1
+10.0.0.102      supervisor2
+10.0.0.22       kafka2
+10.0.0.105      supervisor5
+10.0.0.104      supervisor4
+10.0.0.243      zookeeper3
+10.0.0.101      supervisor1
+10.0.0.251      nimbus1
+10.0.0.21       kafka1
