@@ -43,6 +43,10 @@ public final class Consts {
 	public static final int STORM_HBASE_SENSOR_BOLT_PARALLELISM = 10;
 	public static final int STORM_NUMBER_OF_WORKERS = 5;
 	
+	/*HDFS */
+	public static final String HDFS_PORT = "8020";
+	public static final String HDFS_URL = "hdfs://" + HBase_Master + ":" + HDFS_PORT;
+	public static final String HDFS_PATH = "/sensorData/";
 	
 	/* HBase*/
 	public static final String HBASE_TABLE_NAME_SENSORS_SPEED_LAYER = "SensorValuesSpeedLayer";
