@@ -31,7 +31,11 @@ public class SE4450Topology {
 
 	public static final String HBASE_SENSOR_BOLT = "hbaseSensor";
 
-	// Entry point for the topology
+	/**
+	 * The main entry point of the storm topology
+	 * @param args args[0] The XML file to open to load the hbase information, generally hbase-site.xml
+	 * @throws Exception
+	 */
 	public static void main(String[] args) throws Exception {
 
 		// Create configuration
@@ -40,7 +44,7 @@ public class SE4450Topology {
 
 		// hbase configuration
 		Map<String, Object> hbConf = new HashMap<String, Object>();
-		if(HBaseUtils.LoadHBaseSiteData(Consts.STORM_HBASE_SITE_XML, hbConf))
+		if(args.length > 0 && HBaseUtils.LoadHBaseSiteData(args[0], hbConf))
 			conf.put(Consts.STORM_HBASE_CONF_FILE, hbConf);
 
 		// Add serialization for DateTime
