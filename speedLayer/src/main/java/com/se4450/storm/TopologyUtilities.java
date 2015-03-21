@@ -77,7 +77,7 @@ public class TopologyUtilities {
 				.withFieldDelimiter("|");
 
 		// sync the filesystem after every 1k tuples
-		SyncPolicy syncPolicy = new CountSyncPolicy(1000);
+		SyncPolicy syncPolicy = new CountSyncPolicy(1);
 
 		// rotate files when they reach 5MB
 		FileRotationPolicy rotationPolicy = new FileSizeRotationPolicy(5.0f,
