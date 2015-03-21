@@ -37,7 +37,7 @@ public class ParseBolt extends BaseBasicBolt {
 		try {
 			sensorID = Integer.parseInt(inputs[0]);
 			sensorValue = Integer.parseInt(inputs[1]);
-			timestamp = new DateTime(Long.parseLong(inputs[2]) * 1000L);
+			timestamp = new DateTime(Long.parseLong(inputs[2]));
 		} catch (Exception e) {
 			// if there are any errors parsing, throw out the data
 			return;
