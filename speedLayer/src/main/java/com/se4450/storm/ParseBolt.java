@@ -1,7 +1,5 @@
 package com.se4450.storm;
 
-import org.joda.time.DateTime;
-
 import backtype.storm.topology.BasicOutputCollector;
 import backtype.storm.topology.OutputFieldsDeclarer;
 import backtype.storm.topology.base.BaseBasicBolt;
@@ -31,13 +29,13 @@ public class ParseBolt extends BaseBasicBolt {
 			return;
 
 		int sensorID, sensorValue;
-		DateTime timestamp;
+		long timestamp;
 
 		// Parse the data
 		try {
 			sensorID = Integer.parseInt(inputs[0]);
 			sensorValue = Integer.parseInt(inputs[1]);
-			timestamp = new DateTime(Long.parseLong(inputs[2]) * 1000L);
+			timestamp = Long.parseLong(inputs[2]) * 1000L;
 		} catch (Exception e) {
 			// if there are any errors parsing, throw out the data
 			return;
