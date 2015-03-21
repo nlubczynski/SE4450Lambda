@@ -17,6 +17,8 @@ import backtype.storm.topology.TopologyBuilder;
 public class SE4450Topology {
 
 	public static final String KAFKA_SPOUT = "kafkaSpout";
+	
+	public static final String HDFS_BOLT = "hdfsBolt";
 
 	public static final String PARSING_BOLT = "parsedData";
 	public static final String PARSING_BOLT_STREAM = "parsedStream";
@@ -29,9 +31,13 @@ public class SE4450Topology {
 	public static final String FORMAT_SENSOR_TO_HBASE_BOLT_KEY = "formatSensorToHbaseKey";
 	public static final String FORMAT_SENSOR_TO_HBASE_BOLT_VALUE = "SensorValue";
 
-	public static final String HBASE_SENSOR_BOLT = "hbaseSensor";
+	public static final String HBASE_SENSOR_BOLT = "hbaseBolt";
 
-	// Entry point for the topology
+	/**
+	 * The main entry point of the storm topology
+	 * @param args args[0] The XML file to open to load the hbase information, generally hbase-site.xml
+	 * @throws Exception
+	 */
 	public static void main(String[] args) throws Exception {
 
 		// Create configuration
@@ -40,7 +46,7 @@ public class SE4450Topology {
 
 		// hbase configuration
 		Map<String, Object> hbConf = new HashMap<String, Object>();
-		if(HBaseUtils.LoadHBaseSiteData(Consts.STORM_HBASE_SITE_XML, hbConf))
+		if(args.length > 0 && HBaseUtils.LoadHBaseSiteData(args[0], hbConf))
 			conf.put(Consts.STORM_HBASE_CONF_FILE, hbConf);
 
 		// Add serialization for DateTime
@@ -86,6 +92,12 @@ public class SE4450Topology {
 				Consts.STORM_FORMAT_BOLT_PARALLELISM).shuffleGrouping(
 				KAFKA_SPOUT);
 
+		// Add SensorToHDFS to format sensor data for HDFS
+		// reads from PARSING_BOLT : PARSING_BOLT_STREAM 
+		builder.setBolt(HDFS_BOLT, TopologyUtilities.getHdfsBolt(),
+				Consts.STORM_HBASE_SENSOR_BOLT_PARALLELISM).shuffleGrouping(
+				PARSING_BOLT, PARSING_BOLT_STREAM);
+		
 		// Add SenstorToHBase to format sensor data for HBase
 		// reads from PARSING_BOLT : PARSING_BOLT_STREAM
 		// outputs parsed data in the form (string:key, string:value) to

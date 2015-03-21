@@ -4,7 +4,19 @@ import java.util.UUID;
 
 import org.apache.storm.hbase.bolt.HBaseBolt;
 import org.apache.storm.hbase.bolt.mapper.SimpleHBaseMapper;
+import org.apache.storm.hdfs.bolt.HdfsBolt;
+import org.apache.storm.hdfs.bolt.format.DefaultFileNameFormat;
+import org.apache.storm.hdfs.bolt.format.DelimitedRecordFormat;
+import org.apache.storm.hdfs.bolt.format.FileNameFormat;
+import org.apache.storm.hdfs.bolt.format.RecordFormat;
+import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
+import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy;
+import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy.Units;
+import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
+import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
+
 import com.se4450.shared.Consts;
+
 import backtype.storm.spout.SchemeAsMultiScheme;
 import backtype.storm.tuple.Fields;
 import storm.kafka.BrokerHosts;
@@ -56,5 +68,26 @@ public class TopologyUtilities {
 
 		return new HBaseBolt(Consts.HBASE_TABLE_NAME_SENSORS_SPEED_LAYER,
 				mapper).withConfigKey(Consts.STORM_HBASE_CONF_FILE);
+	}
+
+	public static HdfsBolt getHdfsBolt() {
+
+		// use "|" instead of "," for field delimiter
+		RecordFormat format = new DelimitedRecordFormat()
+				.withFieldDelimiter("|");
+
+		// sync the filesystem after every 1k tuples
+		SyncPolicy syncPolicy = new CountSyncPolicy(1);
+
+		// rotate files when they reach 5MB
+		FileRotationPolicy rotationPolicy = new FileSizeRotationPolicy(5.0f,
+				Units.MB);
+
+		FileNameFormat fileNameFormat = new DefaultFileNameFormat()
+				.withPath(Consts.HDFS_PATH);
+
+		return new HdfsBolt().withFsUrl(Consts.HDFS_URL)
+				.withFileNameFormat(fileNameFormat).withRecordFormat(format)
+				.withRotationPolicy(rotationPolicy).withSyncPolicy(syncPolicy);
 	}
 }
