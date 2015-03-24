@@ -74,8 +74,8 @@ public class TopologyUtilities {
 
 		// use "|" instead of "," for field delimiter
 		RecordFormat format = new DelimitedRecordFormat()
-				.withFieldDelimiter("|");
-
+				.withFieldDelimiter(" ");
+		
 		// sync the filesystem after every 1k tuples
 		SyncPolicy syncPolicy = new CountSyncPolicy(1);
 
