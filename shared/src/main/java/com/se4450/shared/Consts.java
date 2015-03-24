@@ -41,6 +41,7 @@ public final class Consts {
 	public static final int STORM_KAFKA_SPOUT_PARALLELISM = 2;
 	public static final int STORM_FORMAT_BOLT_PARALLELISM = 5;
 	public static final int STORM_HBASE_SENSOR_BOLT_PARALLELISM = 10;
+	public static final int STORM_HDFS_BOLT_PARALLELISM = 5;
 	public static final int STORM_NUMBER_OF_WORKERS = 5;
 	
 	/*HDFS */
