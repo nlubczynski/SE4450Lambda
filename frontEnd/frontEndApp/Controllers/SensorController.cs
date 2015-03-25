@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using FrontEndApp.Models;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -14,7 +15,7 @@ namespace FrontEndApp.Controllers
         // GET api/<controller>
         public string Get()
         {
-            return JsonConvert.SerializeObject(MvcApplication.Instance.Sensors.ToArray());
+            return JsonConvert.SerializeObject(new Powersmiths().Sensors);
         }
 
         // POST api/<controller>

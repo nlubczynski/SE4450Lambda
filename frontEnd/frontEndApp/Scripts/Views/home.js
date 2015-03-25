@@ -3,41 +3,46 @@
     var mySqlLoading = false;
     var lambdaLoading = false;
 
-    // Declare a proxy to reference the hub. 
-    var updateMySQL = $.connection.updateHub;
+    /**
+    * Load data for a specific time range and sensorID into the MySQL chart
+    */
+    function loadMySQLSensorData(index, sensorID, start, end, first) {
+        return $.getJSON("/api/sensorData/?sensorID=" + sensorID + "&start=" + start + "&end=" + end, function (data) {
+            //parse the data
+            data = $.parseJSON(data);
 
-    // Create a function that the hub can call to broadcast messages.
-    updateMySQL.client.updateMySQL = function () {
-        // get the time
-        var end = new Date().getTime();
-        var begin = end - (60 * 1000);
+            if (first)
+                data = [].concat(data, [[new Date().getTime(), null, null, null, null]]);
 
-        // set spread to minute
-        afterSetExtremes({ 'min': begin, 'max': end });
+            // get the chart
+            var MySQL = $('#MySQL').highcharts();
 
-        //update the extremes
-        $('#MySQL').highcharts().xAxis[0].setExtremes(begin, end, true);
-    };
-
-    // Start the connection
-    $.connection.hub.start();
+            // does this series exist?
+            if (MySQL.get('Sensor ' + sensorID) == null) {
+                // no - add the series
+                MySQL.addSeries({
+                    name: 'Sensor ' + sensorID,
+                    id: 'Sensor ' + sensorID,
+                    data: data
+                }, true);
+            }
+            else {
+                // yes - replace the data
+                MySQL.get('Sensor ' + sensorID).setData(data);
+            }
+        });
+    }
 
     /**
      * Load new data depending on the selected min and max
      */    
     function afterSetExtremes(e) {
-        if (e == null) {
-            e = {
-                'min': 0,
-                'max': new Date().getTime()
-            };
-        }
 
         var MySQL = $('#MySQL').highcharts();
         var Lambda = $('#Lambda').highcharts();
 
-        //MySQL.showLoading('Loading data from server...');
-        //Lambda.showLoading('Loading data from server...');
+        MySQL.showLoading('Loading data from server...');
+        Lambda.showLoading('Loading data from server...');
 
 
         if (mySqlLoading != true) {
@@ -45,27 +50,21 @@
             mySqlLoading = true;
 
             // Get the data
-            $.getJSON('api/sensorData/?start=' + Math.round(e.min) + '&end=' + Math.round(e.max), function (sensorData) {
-                // for each series returned, either add it to the chart, or replace the existing chart data with
-                // the value of the new data
-                $.each($.parseJSON(sensorData), function (itemNo, item) {
-                    // does this series exist?
-                    if (MySQL.get('Sensor ' + itemNo) == null) {
-                        // no - add the series
-                        MySQL.addSeries({
-                            name: 'Sensor ' + itemNo,
-                            id: 'Sensor ' + itemNo,
-                            data: item
-                        }, true);
-                    }
-                    else {
-                        // yes - replace the data
-                        MySQL.get('Sensor ' + itemNo).setData(item);
-                    }
-                });
+            $.getJSON("/api/sensor", function (sensors) {
+                // parse the json
+                sensors = $.parseJSON(sensors);
 
-                MySQL.hideLoading();
-                mySqlLoading = false;
+                // array of loading events
+                var loads = [];
+
+                // for each sensor, add the loading event to the array
+                $.each(sensors, function (index, sensor) { loads.push(loadMySQLSensorData(index, sensor.ID, Math.round(e.min), Math.round(e.max), false)) })
+
+                // Done loading
+                $.when.apply($, loads).done(function () {
+                    MySQL.hideLoading();
+                    mySqlLoading = false;
+                })
             });
         };
 
@@ -76,11 +75,9 @@
         }
     }
 
-    // MySql
-    // create the chart
+    // MySql chart
     $('#MySQL').highcharts('StockChart', {
         chart: {
-            //type: 'candlestick',
             zoomType: 'x'
         },
 
@@ -139,10 +136,9 @@
     });  
 
 
-    // create the chart
+    // Lambda chart
     $('#Lambda').highcharts('StockChart', {
         chart: {
-            type: 'candlestick',
             zoomType: 'x'
         },
 
@@ -174,5 +170,31 @@
         }
     });
 
-    afterSetExtremes(null);
+    // Do the first loads
+    $.getJSON("/api/sensor", function (sensors) {
+        // get the chart
+        var MySQL = $('#MySQL').highcharts();
+
+        // UI stuff
+        MySQL.showLoading('Loading data from server...');
+        mySqlLoading = true;
+
+        // parse the json
+        sensors = $.parseJSON(sensors);
+
+        // array of loading events
+        var loads = [];
+
+        // for each sensor, add the loading event to the array
+        $.each(sensors, function (index, sensor) { loads.push(loadMySQLSensorData(index, sensor.ID, 0, new Date().getTime(), true)) })
+
+        // Done loading
+        $.when.apply($, loads).done(function () {
+            MySQL.hideLoading();
+            mySqlLoading = false;
+        })
+
+        // Set extremes
+        MySQL.xAxis[0].setExtremes(MySQL.xAxis[0].getExtremes().begin, new Date().getTime(), false);
+    });
 });

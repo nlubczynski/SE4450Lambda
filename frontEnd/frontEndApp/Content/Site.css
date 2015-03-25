@@ -3,12 +3,34 @@
     font-family: "Segoe UI", Verdana, Helvetica, Sans-Serif;
     color: #232323;
     background-color: #fff;
+    margin:0;
 }
 
 header, footer, nav, section {
     display: block;
 }
 
+/* Western Lambda Stuff*/
+#top {
+    background-color: #4F2683;
+}
+
+.navbar-brand {
+    color: #FFF;
+}
+
+#we {
+    float: right;
+    height:50px;
+    width:auto;
+    position:absolute;
+    top:0;
+    right:0;
+}
+
+#highcharts-title important!{
+    color:#4F2683;
+}
 
 /* Styles for basic forms
 -----------------------------------------------------------*/
