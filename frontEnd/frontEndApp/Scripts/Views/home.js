@@ -3,6 +3,22 @@
     var mySqlLoading = false;
     var lambdaLoading = false;
 
+    var realTime = false;
+
+    // Realtime
+    $('#realTimeCheckBox').click(function () {
+        realTime = this.checked;
+
+        // Update the current view
+        if (realTime) {
+            afterSetExtremes({
+                'min': $('#MySQL').highcharts().xAxis[0].getExtremes().min,
+                'max': new Date().getTime()
+            });
+        }
+    });
+
+
     /**
     * Load data for a specific time range and sensorID into the MySQL chart
     */
@@ -39,11 +55,21 @@
     function afterSetExtremes(e) {
 
         var MySQL = $('#MySQL').highcharts();
-        var Lambda = $('#Lambda').highcharts();
+        var Lambda = $('#Lambda').highcharts();        
 
-        MySQL.showLoading('Loading data from server...');
-        Lambda.showLoading('Loading data from server...');
+        // If realtime, force them to be current
+        if (realTime) {
+            // set new max and min
+            e.max = new Date().getTime();
 
+            // update extremes
+            MySQL.xAxis[0].setExtremes(MySQL.xAxis[0].getExtremes().min, new Date().getTime(), true);
+        }
+        else {
+            // Else let's make it look nicer
+            MySQL.showLoading('Loading data from server...');
+            Lambda.showLoading('Loading data from server...');
+        }
 
         if (mySqlLoading != true) {
             // set the loading, to prevent this function running concurrently
@@ -64,6 +90,12 @@
                 $.when.apply($, loads).done(function () {
                     MySQL.hideLoading();
                     mySqlLoading = false;
+
+                    if(realTime)
+                    {
+                        //let's do it again!
+                        window.setTimeout(afterSetExtremes(e), 1000);
+                    }
                 })
             });
         };
