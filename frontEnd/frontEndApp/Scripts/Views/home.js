@@ -59,11 +59,15 @@
 
         // If realtime, force them to be current
         if (realTime) {
+            // Get current extremes
+            var difference = e.max - e.min;
+            
             // set new max and min
             e.max = new Date().getTime();
+            e.min = e.max - difference;
 
-            // update extremes
-            MySQL.xAxis[0].setExtremes(MySQL.xAxis[0].getExtremes().min, new Date().getTime(), true);
+            // Set extremes
+            MySQL.xAxis[0].setExtremes(e.min, e.max, false);
         }
         else {
             // Else let's make it look nicer
@@ -227,6 +231,6 @@
         })
 
         // Set extremes
-        MySQL.xAxis[0].setExtremes(MySQL.xAxis[0].getExtremes().begin, new Date().getTime(), false);
+        MySQL.xAxis[0].setExtremes(MySQL.xAxis[0].getExtremes().min, new Date().getTime(), false);
     });
 });
