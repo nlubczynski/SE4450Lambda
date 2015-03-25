@@ -25,9 +25,13 @@ import org.apache.hadoop.hbase.protobuf.ProtobufUtil;
  *
  */
 public class Merge {
+	/**
+	 * Main method for debug purposes only
+	 * @param args not used in current implementation
+	 */
 	public static void main(String[] args) {
 
-		System.out.println(getAllDataQuery());
+		getAllDataQuery();
 
 		System.exit(0);
 	}
@@ -59,19 +63,19 @@ public class Merge {
 		ResultScanner speedLayerTableResults = scanHBaseTable(speedLayerTable,
 				families);
 
-		HashMap<String, HashMap<String,String>> results = null;
-		
+		HashMap<String, HashMap<String, String>> results = null;
+
 		try {
-			 results = mergeSpeedAndServing(servingLayerTableResults,
+			results = mergeSpeedAndServing(servingLayerTableResults,
 					speedLayerTableResults);
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 			System.out.println("Could not print out results");
-			
+
 			return null;
 		}
-		
+
 		JSONArray resultsJSON = toJSON(results);
 
 		servingLayerTableResults.close();
@@ -98,8 +102,7 @@ public class Merge {
 			e.printStackTrace();
 			System.out.println(e.getMessage());
 		}
-		
-		
+
 		HTable hTable = null;
 		try {
 			hTable = new HTable(conf, tableName);
@@ -181,10 +184,11 @@ public class Merge {
 			ResultScanner servingLayer, ResultScanner speedLayer)
 			throws IOException {
 
+		// HashMap sensorID=>Map{timestamp => timestamp val, value => value val
 		HashMap<String, HashMap<String, String>> mergedResults = new HashMap<String, HashMap<String, String>>();
 
-		// HashMap sensorID=>Map{timestamp => timestamp val, value => value val
-		int number = 0;
+		// For Debug purposed only
+		int servingLayerResultsCount = 0;
 		for (Result result = servingLayer.next(); (result != null); result = servingLayer
 				.next()) {
 			// gets rowkey
@@ -204,21 +208,37 @@ public class Merge {
 				return null;
 			}
 
-			String speedLayerSensorId = rowKeySplit[0];
-			String speedLayerTimestamp = rowKeySplit[1];
+			String servingLayerSensorId = rowKeySplit[0];
+			String servingLayerTimestamp = rowKeySplit[1];
+
+			// map used for getting values
+			HashMap<String, String> rowValues = new HashMap<String, String>();
 
 			// String rowKeySplit = rowKey.
 			String value = Bytes.toString(result.getValue(Bytes.toBytes("d"),
 					Bytes.toBytes("val")));
 
-			HashMap<String, String> rowValues = new HashMap<String, String>();
-			rowValues.put(speedLayerTimestamp, value);
-			mergedResults.put(speedLayerSensorId, rowValues);
+			// check if there is an entry that has servingLayerSensorId.
+			if (!(mergedResults.containsKey(servingLayerSensorId))) {
+				// create the entry for servingLayerSensorId
+				mergedResults.put(servingLayerSensorId,
+						new HashMap<String, String>());
+			}
+
+			// get the map and add in value
+			rowValues = mergedResults.get(servingLayerSensorId);
+			rowValues.put(servingLayerTimestamp, value);
+			servingLayerResultsCount++;
+
+			// create new entry in merge
+
+			// update the results map
+			mergedResults.put(servingLayerSensorId, rowValues);
 		}
 
 		// look up id then look up timestamp if not there add to map. otherwise
 		// skip
-		number = 0;
+		int speedLayerResultsCount = 0;
 		for (Result result = speedLayer.next(); (result != null); result = speedLayer
 				.next()) {
 			// gets rowkey
@@ -258,6 +278,8 @@ public class Merge {
 					HashMap<String, String> sensorMap = mergedResults
 							.get(speedLayerSensorId);
 					sensorMap.put(speedLayerTimestamp, speedLayerValue);
+					
+					speedLayerResultsCount++;
 				}
 			}
 			// serving layer had no record of that timestamp. creat it all from
@@ -266,15 +288,21 @@ public class Merge {
 				HashMap<String, String> newSensorMap = new HashMap<String, String>();
 				newSensorMap.put(speedLayerTimestamp, speedLayerValue);
 				mergedResults.put(speedLayerSensorId, newSensorMap);
+				
+				speedLayerResultsCount++;;
 			}
 		}
 
-		System.out.println("Number in merged results " + number);
+		System.out.println("****Summary****");
+		System.out.println("Number in merged results " + servingLayerResultsCount + speedLayerResultsCount);
+		System.out.println("Number in serving results " + servingLayerResultsCount );
+		System.out.println("Number in speed results " + speedLayerResultsCount);
 
 		return mergedResults;
 	}
 
-	private static JSONArray toJSON(HashMap<String, HashMap<String, String>> results) {
+	private static JSONArray toJSON(
+			HashMap<String, HashMap<String, String>> results) {
 		JSONArray resultsArray = new JSONArray();
 
 		Set<String> sensorIds = results.keySet();
