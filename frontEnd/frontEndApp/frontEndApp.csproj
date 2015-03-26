@@ -162,7 +162,6 @@
     <Compile Include="Controllers\BuildingController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\SensorController.cs" />
-    <Compile Include="Controllers\SensorReadingsLambdaController.cs" />
     <Compile Include="Controllers\SensorReadingsController.cs" />
     <Compile Include="Global.asax.cs">
       <DependentUpon>Global.asax</DependentUpon>
