@@ -2,7 +2,7 @@ package com.se4450.merge;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
@@ -14,35 +14,103 @@ import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
 
 import com.google.protobuf.ServiceException;
-import org.apache.hadoop.hbase.protobuf.ProtobufUtil;
 
 /**
  * Hello world!
  *
  */
 public class Merge {
-	/**
-	 * Main method for debug purposes only
-	 * @param args not used in current implementation
-	 */
+
 	public static void main(String[] args) {
+		Reading r1 = new Reading("1", "123", "100");
+		Reading r2 = new Reading("1", "123", "1004");
+		Reading r3 = new Reading("2", "123", "100");
+		Reading r4 = new Reading("1", "1234", "100");
 
-		getAllDataQuery();
+		Set<Reading> set = new HashSet<Reading>();
 
-		System.exit(0);
+		set.add(r1);
+		set.add(r2);
+		set.add(r3);
+		set.add(r4);
+
+		for (Reading reading : set) {
+			System.out.println(reading.getId() + " : "
+					+ reading.get_timestamp());
+
+		}
 	}
 
 	/**
-	 * A query that is called by tomcat server to get all data in serving and
-	 * speed layers
+	 * Public method that server calls to get data for a specific data
+	 * 
+	 * @param sensorId
+	 *            sensor id to get data for
+	 * @param timestampStart
+	 *            epoch timestamp of when you want to start getting data from
+	 * @param timestampEnd
+	 *            epoch timestamp of when you want to end getting data from
+	 * @return JSOnArray representing sensor readings of sensorId between
+	 *         (inclusive) two timestamps
+	 */
+	public static JSONArray querySensorData(String sensorId,
+			String timestampStart, String timestampEnd) {
+
+		// create row key filter strings to pass to scan class.
+		// Scanner will get data between these two values.
+
+		// start is inclusive
+		String startRowKeyString = buildRowKeyFilterString(sensorId,
+				timestampStart);
+
+		// End date is exclusive so must fix to be inclusive
+		String endRowKeyString = null;
+
+		// if timestamp is not null add 1 ms to increment.
+		if (timestampEnd != null) {
+			String timestampEndFixed = String.valueOf((Integer
+					.parseInt(timestampEnd) + 1));
+
+			// create row key filter based on this new parameter
+			endRowKeyString = buildRowKeyFilterString(sensorId,
+					timestampEndFixed);
+		}
+		// if timestamp is null increment sensorId to next value as we want to
+		// get all the values for that sensor
+		else {
+			String sensorIdFixed = String
+					.valueOf((Integer.parseInt(sensorId) + 1));
+
+			// create row key filter based on this new paramaeters
+			endRowKeyString = buildRowKeyFilterString(sensorIdFixed,
+					timestampEnd);
+
+		}
+
+		return getData(startRowKeyString, endRowKeyString);
+
+	}
+
+	/**
+	 * Public method server calls to get all data
+	 * 
+	 * @return JSONArray of all data in Serving and Speed layers
+	 */
+
+	public static JSONArray queryAllData() {
+		return getData(null, null);
+	}
+
+	/**
+	 * Gets all data in serving and speed layers based on two row key filters
 	 * 
 	 * @return JSONArray of data
 	 */
-	public static JSONArray getAllDataQuery() {
+	private static JSONArray getData(String startRowKeyString,
+			String endRowKeyString) {
 		Configuration conf = HBaseConfiguration.create();
 
 		conf = Utilities.loadHBaseConfiguration(conf);
@@ -59,11 +127,11 @@ public class Merge {
 
 		// get table results
 		ResultScanner servingLayerTableResults = scanHBaseTable(
-				servingLayerTable, families);
+				servingLayerTable, families, startRowKeyString, endRowKeyString);
 		ResultScanner speedLayerTableResults = scanHBaseTable(speedLayerTable,
-				families);
+				families, startRowKeyString, endRowKeyString);
 
-		HashMap<String, HashMap<String, String>> results = null;
+		Set<Reading> results = null;
 
 		try {
 			results = mergeSpeedAndServing(servingLayerTableResults,
@@ -94,6 +162,28 @@ public class Merge {
 		return resultsJSON;
 	}
 
+	private static String buildRowKeyFilterString(String id, String timestamp) {
+
+		StringBuilder sb = new StringBuilder();
+
+		// if no id present then return null as all data should be retrieved
+		if (id == null)
+			return null;
+		// id and timestamp
+		else if (timestamp != null) {
+
+			sb.append(id);
+			sb.append("-");
+			sb.append(timestamp);
+
+		}
+		// id no timestamp
+		else {
+			sb.append(id);
+		}
+		return sb.toString();
+	}
+
 	private static HTable getTableReference(String tableName, Configuration conf) {
 		try {
 			HBaseAdmin.checkHBaseAvailable(conf);
@@ -114,22 +204,6 @@ public class Merge {
 		}
 
 		return hTable;
-	}
-
-	/**
-	 * Scans Hbase wen no start or end row key values are required. Will scan
-	 * whole table.
-	 * 
-	 * @param hTable
-	 *            the instance of the the HBase table to be scan
-	 * @param families
-	 *            the column family that are to be included in scan
-	 * @return a ResultScanner for whole table
-	 */
-
-	private static ResultScanner scanHBaseTable(HTable hTable,
-			ArrayList<String> families) {
-		return scanHBaseTable(hTable, families, null, null);
 	}
 
 	/**
@@ -180,17 +254,17 @@ public class Merge {
 		return scanner;
 	}
 
-	private static HashMap<String, HashMap<String, String>> mergeSpeedAndServing(
+	private static Set<Reading> mergeSpeedAndServing(
 			ResultScanner servingLayer, ResultScanner speedLayer)
 			throws IOException {
 
-		// HashMap sensorID=>Map{timestamp => timestamp val, value => value val
-		HashMap<String, HashMap<String, String>> mergedResults = new HashMap<String, HashMap<String, String>>();
+		Set<Reading> resultSet = new HashSet<Reading>();
 
 		// For Debug purposed only
 		int servingLayerResultsCount = 0;
 		for (Result result = servingLayer.next(); (result != null); result = servingLayer
 				.next()) {
+
 			// gets rowkey
 			String rowKey = Bytes.toString(result.getRow());
 			// String sensorID = rowKey.substring(0, rowKey.indexOf("-"));
@@ -211,29 +285,16 @@ public class Merge {
 			String servingLayerSensorId = rowKeySplit[0];
 			String servingLayerTimestamp = rowKeySplit[1];
 
-			// map used for getting values
-			HashMap<String, String> rowValues = new HashMap<String, String>();
-
 			// String rowKeySplit = rowKey.
-			String value = Bytes.toString(result.getValue(Bytes.toBytes("d"),
-					Bytes.toBytes("val")));
+			String servingLayerValue = Bytes.toString(result.getValue(
+					Bytes.toBytes("d"), Bytes.toBytes("val")));
 
-			// check if there is an entry that has servingLayerSensorId.
-			if (!(mergedResults.containsKey(servingLayerSensorId))) {
-				// create the entry for servingLayerSensorId
-				mergedResults.put(servingLayerSensorId,
-						new HashMap<String, String>());
-			}
+			// Create Reading object
+			Reading sensorReading = new Reading(servingLayerSensorId,
+					servingLayerTimestamp, servingLayerValue);
 
-			// get the map and add in value
-			rowValues = mergedResults.get(servingLayerSensorId);
-			rowValues.put(servingLayerTimestamp, value);
-			servingLayerResultsCount++;
-
-			// create new entry in merge
-
-			// update the results map
-			mergedResults.put(servingLayerSensorId, rowValues);
+			// Add to set
+			resultSet.add(sensorReading);
 		}
 
 		// look up id then look up timestamp if not there add to map. otherwise
@@ -265,79 +326,31 @@ public class Merge {
 			String speedLayerValue = Bytes.toString(result.getValue(
 					Bytes.toBytes("d"), Bytes.toBytes("val")));
 
-			// check if serving layer has record for that sensor
-			if (mergedResults.containsKey(speedLayerSensorId)) {
-				// check if the sensor has record with that timestamp
-				if (mergedResults.get(speedLayerSensorId).containsKey(
-						speedLayerTimestamp)) {
-					continue;
-				}
-				// doesnt have record with timestamp
-				else {
-					// get the sensors map and add the timstamp an value
-					HashMap<String, String> sensorMap = mergedResults
-							.get(speedLayerSensorId);
-					sensorMap.put(speedLayerTimestamp, speedLayerValue);
-					
-					speedLayerResultsCount++;
-				}
-			}
-			// serving layer had no record of that timestamp. creat it all from
-			// scratch
-			else {
-				HashMap<String, String> newSensorMap = new HashMap<String, String>();
-				newSensorMap.put(speedLayerTimestamp, speedLayerValue);
-				mergedResults.put(speedLayerSensorId, newSensorMap);
-				
-				speedLayerResultsCount++;;
-			}
+			// Create Reading object
+			Reading sensorReading = new Reading(speedLayerSensorId,
+					speedLayerTimestamp, speedLayerValue);
+
+			// Add to set
+			resultSet.add(sensorReading);
+
 		}
 
 		System.out.println("****Summary****");
-		System.out.println("Number in merged results " + servingLayerResultsCount + speedLayerResultsCount);
-		System.out.println("Number in serving results " + servingLayerResultsCount );
+		System.out.println("Number in merged results "
+				+ servingLayerResultsCount + speedLayerResultsCount);
+		System.out.println("Number in serving results "
+				+ servingLayerResultsCount);
 		System.out.println("Number in speed results " + speedLayerResultsCount);
 
-		return mergedResults;
+		return resultSet;
 	}
 
-	private static JSONArray toJSON(
-			HashMap<String, HashMap<String, String>> results) {
+	private static JSONArray toJSON(Set<Reading> resultSet) {
 		JSONArray resultsArray = new JSONArray();
 
-		Set<String> sensorIds = results.keySet();
-
-		for (String sensorId : sensorIds) {
-			HashMap<String, String> sensorReadings = results.get(sensorId);
-
-			Set<String> timestamps = sensorReadings.keySet();
-
-			JSONObject obj = new JSONObject();
-
-			for (String timestamp : timestamps) {
-				String value = sensorReadings.get(timestamp);
-
-				try {
-					obj.put("sensorID", sensorId);
-				} catch (JSONException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				try {
-					obj.put("timestamp", timestamp);
-				} catch (JSONException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				try {
-					obj.put("value", value);
-				} catch (JSONException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-
-				resultsArray.put(obj);
-			}
+		for (Reading reading : resultSet) {
+			JSONObject obj = reading.serialize();
+			resultsArray.put(obj);
 		}
 
 		return resultsArray;

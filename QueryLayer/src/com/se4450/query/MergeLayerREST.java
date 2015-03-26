@@ -34,14 +34,49 @@ public class MergeLayerREST extends HttpServlet {
 			HttpServletResponse response) throws ServletException, IOException {
 		// TODO Auto-generated method stub
 		// TODO Auto-generated method stub
+
+		JSONArray requestResponse = null;
+
+		String queryString = request.getQueryString();
+		String[] queryParameters = null;
+
+		// if there was no query parameter get all data
+		if (queryString == null || queryString.isEmpty()) {
+			requestResponse = com.se4450.merge.Merge.queryAllData();
+		}
+
+		// if there was a query parameter parse and build query
+		else {
+			queryParameters = queryString.split("&");
+			String sensorIdRequested = null;
+			String startRowKeyRequested = null;
+			String endRowKeyRequeted = null;
+
+			for (String parameter : queryParameters) {
+				String[] parameterSplit = parameter.split("=");
+
+				String parameterId = parameterSplit[0];
+				String parameterValue = parameterSplit[1];
+
+				if (parameterId.equals("id")) {
+					sensorIdRequested = parameterValue;
+				} else if (parameterId.equals("start")) {
+					startRowKeyRequested = parameterValue;
+				} else if (parameterId.equals("end")) {
+					endRowKeyRequeted = parameterValue;
+				}
+
+			}
+
+			requestResponse = com.se4450.merge.Merge.querySensorData(
+					sensorIdRequested, startRowKeyRequested, endRowKeyRequeted);
+		}
 		response.setContentType("application/json");
 
 		PrintWriter out = response.getWriter();
 
-		JSONArray array = com.se4450.merge.Merge.getAllDataQuery();
+		out.println(requestResponse);
 
-		out.println(array);
-		System.out.println(array);
 		out.flush();
 	}
 
