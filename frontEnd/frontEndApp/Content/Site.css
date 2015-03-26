@@ -3,12 +3,52 @@
     font-family: "Segoe UI", Verdana, Helvetica, Sans-Serif;
     color: #232323;
     background-color: #fff;
+    margin:0;
 }
 
 header, footer, nav, section {
     display: block;
 }
 
+/* Western Lambda Stuff*/
+#top {
+    background-color: #4F2683;
+    box-shadow: 0px 3px 4px #6E6E6E;
+}
+
+#realtime {
+    right: 70px;
+    color: white;
+    font-size: 20px;
+    line-height: 225%;
+    float: right;
+    position: absolute;
+}
+
+.navbar-brand, .navbar-brand:hover {
+    color: #FFF;
+}
+
+#we {
+    float: right;
+    height:50px;
+    width:auto;
+    position:absolute;
+    top:0;
+    right:0;
+}
+.graph {
+    height: 45%;
+    width: 100%;
+    position:absolute;
+}
+#Lambda {
+    bottom:0;
+}
+
+#highcharts-title important!{
+    color:#4F2683;
+}
 
 /* Styles for basic forms
 -----------------------------------------------------------*/

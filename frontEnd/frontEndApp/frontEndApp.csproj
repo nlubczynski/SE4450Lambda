@@ -159,6 +159,7 @@
     <Compile Include="App_Start\FilterConfig.cs" />
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
+    <Compile Include="Controllers\BuildingController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\SensorController.cs" />
     <Compile Include="Controllers\SensorReadingsController.cs" />
@@ -168,6 +169,7 @@
     <Compile Include="Hubs\Startup.cs" />
     <Compile Include="Hubs\UpdateHub.cs" />
     <Compile Include="Models\Building.cs" />
+    <Compile Include="Models\JsonSensorReading.cs" />
     <Compile Include="Models\MySQLRepository.cs" />
     <Compile Include="Models\Sensor.cs" />
     <Compile Include="Models\SensorReading.cs" />
@@ -208,6 +210,7 @@
     <Content Include="Content\themes\base\tabs.css" />
     <Content Include="Content\themes\base\theme.css" />
     <Content Include="Content\themes\base\tooltip.css" />
+    <Content Include="Content\we.gif" />
     <Content Include="Global.asax" />
     <Content Include="Content\Site.css" />
     <Content Include="Scripts\highstock.js" />
