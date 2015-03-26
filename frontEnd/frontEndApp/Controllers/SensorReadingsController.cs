@@ -28,6 +28,8 @@ namespace FrontEndApp.Controllers
 
             // Create required objects            
             IEnumerable<SensorReading> enumerable;
+            Powersmiths database = new Powersmiths();
+            database.Database.CommandTimeout = 60 * 10;
 
             // If lambda, query the merge layer for the values, put them into json, and continue
             if (lambda)
@@ -35,8 +37,17 @@ namespace FrontEndApp.Controllers
                 WebClient wc = new WebClient();
                 try
                 {
+                    // Get the sensor ids of the sensors attached to the build
+                    var sensorIds = string.Join(",", 
+                        database.Sensors.Join(database.Buildings, 
+                                sensor => sensor.BuildingID, 
+                                building => building.ID, 
+                                (sensor, building) => new { Sensor = sensor, Building = building })
+                       .Where(joined => joined.Building.ID == buildingID)
+                       .Select(joined => joined.Sensor.ID));
+
                     var result =
-                        wc.DownloadString("http://129.100.225.187:4880/MergeLayerServer/QueryLayerMerge?id=" + buildingID + "&start=" + start + "&end=" + end);
+                        wc.DownloadString("http://129.100.225.187:4880/MergeLayerServer/QueryLayerMerge?id=" + sensorIds + "&start=" + start + "&end=" + end);
 
                     // Parse the result
                     //JavaScriptSerializer js = new JavaScriptSerializer();
@@ -49,15 +60,13 @@ namespace FrontEndApp.Controllers
                 }
                 catch
                 {
-                    return "Error";
+                    return "[[" + (DateTime.Now - new DateTime(1970,1,1)).TotalMilliseconds + ",0.0]]";
                 }
             }
             // if not lambda, query the mysql database for the values
             else
-            {
-                Powersmiths context = new Powersmiths();
-                context.Database.CommandTimeout = 60 * 10;
-                enumerable = context.SensorReadings;
+            {                
+                enumerable = database.SensorReadings;
             }            
 
             // check the time is valid and that the sensorID is valid

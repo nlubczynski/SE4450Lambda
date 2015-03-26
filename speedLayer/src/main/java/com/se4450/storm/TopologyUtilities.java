@@ -56,7 +56,7 @@ public class TopologyUtilities {
 	 *         set in com.se4450.shared.Consts. It's configured to expect the
 	 *         values emitted from a SensorToHBase bolt.
 	 */
-	public static HBaseBolt getSensorDataHBaseBolt() {
+	public static HBaseBolt getSensorDataHBaseBolt(String tablename) {
 
 		// Create a SimpleHBaseMapper with the values from a SensorToHBase bolt
 		SimpleHBaseMapper mapper = new SimpleHBaseMapper()
@@ -66,7 +66,7 @@ public class TopologyUtilities {
 								SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_VALUE))
 				.withColumnFamily(Consts.HBASE_COLUMN_FAMILY_SPEED_LAYER);
 
-		return new HBaseBolt(Consts.HBASE_TABLE_NAME_SENSORS_SPEED_LAYER,
+		return new HBaseBolt(tablename,
 				mapper).withConfigKey(Consts.STORM_HBASE_CONF_FILE);
 	}
 

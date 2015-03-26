@@ -104,7 +104,8 @@ public class SE4450Topology {
 
 		// Add HDFS parse bolt to split/format incoming Kafka stream
 		// reads from KAFKA_SPOUT
-		// outputs parsed data in the form (string: id, long:timestamp) to PARSING_BOLT
+		// outputs parsed data in the form (string: id, long:timestamp) to
+		// PARSING_BOLT
 		builder.setBolt(HDFS_PARSE_BOLT, new HdfsParseBolt(),
 				Consts.STORM_FORMAT_BOLT_PARALLELISM).shuffleGrouping(
 				KAFKA_SPOUT);
@@ -123,11 +124,21 @@ public class SE4450Topology {
 				Consts.STORM_HBASE_SENSOR_BOLT_PARALLELISM).shuffleGrouping(
 				PARSING_BOLT, PARSING_BOLT_STREAM);
 
-		// Add HBaseBolt to write raw sensor data to HBase table
+		// Add two HBaseBolts to write raw sensor data to the
+		// alternatingly deleted speed layers
 		// reads from PARSING_BOLT
 		// outputs nothing
-		builder.setBolt(HBASE_SENSOR_BOLT,
-				TopologyUtilities.getSensorDataHBaseBolt(),
+		builder.setBolt(
+				HBASE_SENSOR_BOLT + "1",
+				TopologyUtilities
+						.getSensorDataHBaseBolt(Consts.HBASE_TABLE_NAME_SENSORS_SPEED_LAYER),
+				Consts.STORM_HBASE_SENSOR_BOLT_PARALLELISM)
+				.shuffleGrouping(FORMAT_SENSOR_TO_HBASE_BOLT,
+						FORMAT_SENSOR_TO_HBASE_BOLT_STREAM);
+		builder.setBolt(
+				HBASE_SENSOR_BOLT + "2",
+				TopologyUtilities
+						.getSensorDataHBaseBolt(Consts.HBASE_TABLE_NAME_SENSORS_SPEED_LAYER2),
 				Consts.STORM_HBASE_SENSOR_BOLT_PARALLELISM)
 				.shuffleGrouping(FORMAT_SENSOR_TO_HBASE_BOLT,
 						FORMAT_SENSOR_TO_HBASE_BOLT_STREAM);

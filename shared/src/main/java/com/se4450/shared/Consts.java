@@ -51,6 +51,7 @@ public final class Consts {
 	
 	/* HBase*/
 	public static final String HBASE_TABLE_NAME_SENSORS_SPEED_LAYER = "SensorValuesSpeedLayer";
+	public static final String HBASE_TABLE_NAME_SENSORS_SPEED_LAYER2 = "SensorValuesSpeedLayer2";
 	public static final String HBASE_COLUMN_FAMILY_SPEED_LAYER = "d";
 	
 }
