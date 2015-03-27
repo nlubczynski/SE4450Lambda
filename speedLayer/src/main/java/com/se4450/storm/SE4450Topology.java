@@ -25,6 +25,7 @@ public class SE4450Topology {
 	public static final String PARSING_BOLT_ID = "sensorID";
 	public static final String PARSING_BOLT_VALUE = "sensorValue";
 	public static final String PARSING_BOLT_TIME = "sensorTimestamp";
+	public static final String PARSING_BOLT_BID = "buildingID";
 
 	public static final String FORMAT_SENSOR_TO_HBASE_BOLT = "formatSensorToHbase";
 	public static final String FORMAT_SENSOR_TO_HBASE_BOLT_STREAM = "formatSensorToHbaseStream";
@@ -36,6 +37,7 @@ public class SE4450Topology {
 	public static final String HDFS_PARSE_BOLT = "hdfsParseBolt";
 	public static final String HDFS_PARSE_BOLT_ID = "hdfsParseBoltId";
 	public static final String HDFS_PARSE_BOLT_VALUE = "hdfsParseBoltVavlue";
+	public static final String HDFS_PARSE_BOLT_BID = "hdfsParseBoltBuildingId";
 	public static final String HDFS_PARSING_BOLT_STREAM = "hdfsParseBoltStream";
 
 	/**
@@ -97,15 +99,15 @@ public class SE4450Topology {
 		// Add ParseBolt to split/format incoming Kafka stream
 		// reads from KAFKA_SPOUT
 		// outputs parsed data in the form (int:sensorID, int:sensorValue,
-		// long:timestamp) to PARSING_BOLT
+		// long:timestamp, int:buildingID) to PARSING_BOLT
 		builder.setBolt(PARSING_BOLT, new ParseBolt(),
 				Consts.STORM_FORMAT_BOLT_PARALLELISM).shuffleGrouping(
 				KAFKA_SPOUT);
 
 		// Add HDFS parse bolt to split/format incoming Kafka stream
 		// reads from KAFKA_SPOUT
-		// outputs parsed data in the form (string: id, long:timestamp) to
-		// PARSING_BOLT
+		// outputs parsed data in the form (string: id, long:timestamp, int:
+		// buildingID) to PARSING_BOLT
 		builder.setBolt(HDFS_PARSE_BOLT, new HdfsParseBolt(),
 				Consts.STORM_FORMAT_BOLT_PARALLELISM).shuffleGrouping(
 				KAFKA_SPOUT);

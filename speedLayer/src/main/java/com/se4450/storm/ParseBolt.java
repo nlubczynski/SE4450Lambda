@@ -25,10 +25,10 @@ public class ParseBolt extends BaseBasicBolt {
 
 		// Split and make sure it's the right length
 		String[] inputs = input.split(" ");
-		if (inputs.length != 3)
+		if (inputs.length != 4)
 			return;
 
-		int sensorID, sensorValue;
+		int sensorID, sensorValue, buildingID;
 		long timestamp;
 
 		// Parse the data
@@ -36,6 +36,7 @@ public class ParseBolt extends BaseBasicBolt {
 			sensorID = Integer.parseInt(inputs[0]);
 			sensorValue = Integer.parseInt(inputs[1]);
 			timestamp = Long.parseLong(inputs[2]);
+			buildingID = Integer.parseInt(inputs[3]);
 		} catch (Exception e) {
 			// if there are any errors parsing, throw out the data
 			return;
@@ -43,13 +44,14 @@ public class ParseBolt extends BaseBasicBolt {
 
 		// Emit values
 		collector.emit(SE4450Topology.PARSING_BOLT_STREAM, new Values(sensorID,
-				sensorValue, timestamp));
+				sensorValue, timestamp, buildingID));
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		declarer.declareStream(SE4450Topology.PARSING_BOLT_STREAM, new Fields(
 				SE4450Topology.PARSING_BOLT_ID,
 				SE4450Topology.PARSING_BOLT_VALUE,
-				SE4450Topology.PARSING_BOLT_TIME));
+				SE4450Topology.PARSING_BOLT_TIME,
+				SE4450Topology.PARSING_BOLT_BID));
 	}
 }

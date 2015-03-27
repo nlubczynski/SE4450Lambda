@@ -18,6 +18,7 @@ public class SensorToHBase extends BaseBasicBolt {
 		int sensorValue = input.getInteger(1);
 		// Get Time stamp
 		long timestamp = input.getLong(2);
+		
 		// Make a nice string
 		String key = sensorID + "-" + timestamp;
 

@@ -24,10 +24,10 @@ public class HdfsParseBolt extends BaseBasicBolt {
 
 		// Split and make sure it's the right length
 		String[] inputs = input.split(" ");
-		if (inputs.length != 3)
+		if (inputs.length != 4)
 			return;
 
-		int sensorID, sensorValue;
+		int sensorID, sensorValue, buildingID;
 		long timestamp;
 
 		// Parse the data
@@ -35,18 +35,20 @@ public class HdfsParseBolt extends BaseBasicBolt {
 			sensorID = Integer.parseInt(inputs[0]);
 			sensorValue = Integer.parseInt(inputs[1]);
 			timestamp = Long.parseLong(inputs[2]);
+			buildingID = Integer.parseInt(inputs[3]);
 		} catch (Exception e) {
 			// if there are any errors parsing, throw out the data
 			return;
 		}
 
 		// Emit values
-		collector.emit(SE4450Topology.HDFS_PARSING_BOLT_STREAM, new Values(sensorID + "-" + timestamp, sensorValue));
+		collector.emit(SE4450Topology.HDFS_PARSING_BOLT_STREAM, new Values(sensorID + "-" + timestamp, sensorValue, buildingID));
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
 		declarer.declareStream(SE4450Topology.HDFS_PARSING_BOLT_STREAM, new Fields(
 				SE4450Topology.HDFS_PARSE_BOLT_ID,
-				SE4450Topology.HDFS_PARSE_BOLT_VALUE));
+				SE4450Topology.HDFS_PARSE_BOLT_VALUE,
+				SE4450Topology.HDFS_PARSE_BOLT_BID));
 	}
 }
