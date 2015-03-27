@@ -81,7 +81,7 @@ public class Reading {
 			System.out.println(e.getMessage());
 		}
 		try {
-			obj.put("value", this.m_timestamp);
+			obj.put("value", this.m_value);
 		} catch (JSONException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
@@ -89,6 +89,5 @@ public class Reading {
 		}
 
 		return obj;
-
 	}
 }

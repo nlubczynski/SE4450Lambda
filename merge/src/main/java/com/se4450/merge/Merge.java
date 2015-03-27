@@ -2,6 +2,7 @@ package com.se4450.merge;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -24,26 +25,6 @@ import com.google.protobuf.ServiceException;
  */
 public class Merge {
 
-	public static void main(String[] args) {
-		Reading r1 = new Reading("1", "123", "100");
-		Reading r2 = new Reading("1", "123", "1004");
-		Reading r3 = new Reading("2", "123", "100");
-		Reading r4 = new Reading("1", "1234", "100");
-
-		Set<Reading> set = new HashSet<Reading>();
-
-		set.add(r1);
-		set.add(r2);
-		set.add(r3);
-		set.add(r4);
-
-		for (Reading reading : set) {
-			System.out.println(reading.getId() + " : "
-					+ reading.get_timestamp());
-
-		}
-	}
-
 	/**
 	 * Public method that server calls to get data for a specific data
 	 * 
@@ -59,6 +40,12 @@ public class Merge {
 	public static JSONArray querySensorData(String sensorId,
 			String timestampStart, String timestampEnd) {
 
+		if (timestampStart != null)
+			timestampStart = String.format("%013d",
+					Long.parseLong(timestampStart));
+		if (timestampEnd != null)
+			timestampEnd = String.format("%013d", Long.parseLong(timestampEnd));
+
 		// create row key filter strings to pass to scan class.
 		// Scanner will get data between these two values.
 
@@ -71,8 +58,8 @@ public class Merge {
 
 		// if timestamp is not null add 1 ms to increment.
 		if (timestampEnd != null) {
-			String timestampEndFixed = String.valueOf((Integer
-					.parseInt(timestampEnd) + 1));
+			String timestampEndFixed = String.format("%013d",
+					Long.parseLong(timestampEnd) + 1);
 
 			// create row key filter based on this new parameter
 			endRowKeyString = buildRowKeyFilterString(sensorId,
@@ -82,7 +69,7 @@ public class Merge {
 		// get all the values for that sensor
 		else {
 			String sensorIdFixed = String
-					.valueOf((Integer.parseInt(sensorId) + 1));
+					.valueOf((Long.parseLong(sensorId) + 1)+"-");
 
 			// create row key filter based on this new paramaeters
 			endRowKeyString = buildRowKeyFilterString(sensorIdFixed,
@@ -120,6 +107,9 @@ public class Merge {
 				"SensorValuesServingLayer", conf);
 		HTable speedLayerTable = getTableReference("SensorValuesSpeedLayer",
 				conf);
+		
+		HTable speedLayerTable2 = getTableReference("SensorValuesSpeedLayer2",
+				conf); 
 
 		// default families
 		ArrayList<String> families = new ArrayList<String>();
@@ -130,12 +120,14 @@ public class Merge {
 				servingLayerTable, families, startRowKeyString, endRowKeyString);
 		ResultScanner speedLayerTableResults = scanHBaseTable(speedLayerTable,
 				families, startRowKeyString, endRowKeyString);
+		ResultScanner speedLayer2TableResults = scanHBaseTable(speedLayerTable2,
+				families, startRowKeyString, endRowKeyString);
 
 		Set<Reading> results = null;
 
 		try {
 			results = mergeSpeedAndServing(servingLayerTableResults,
-					speedLayerTableResults);
+					speedLayerTableResults,speedLayer2TableResults);
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -185,14 +177,6 @@ public class Merge {
 	}
 
 	private static HTable getTableReference(String tableName, Configuration conf) {
-		try {
-			HBaseAdmin.checkHBaseAvailable(conf);
-		} catch (ServiceException | IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-			System.out.println(e.getMessage());
-		}
-
 		HTable hTable = null;
 		try {
 			hTable = new HTable(conf, tableName);
@@ -226,7 +210,7 @@ public class Merge {
 		// Create Scan object for building scan
 		Scan scan = new Scan();
 		scan.setCaching(20);
-
+		
 		// Add families to scan object
 		for (String family : families) {
 			scan.addFamily(Bytes.toBytes(family));
@@ -255,7 +239,7 @@ public class Merge {
 	}
 
 	private static Set<Reading> mergeSpeedAndServing(
-			ResultScanner servingLayer, ResultScanner speedLayer)
+			ResultScanner servingLayer, ResultScanner speedLayer, ResultScanner speedLayer2)
 			throws IOException {
 
 		Set<Reading> resultSet = new HashSet<Reading>();
@@ -265,9 +249,9 @@ public class Merge {
 		for (Result result = servingLayer.next(); (result != null); result = servingLayer
 				.next()) {
 
+			servingLayerResultsCount++;
 			// gets rowkey
 			String rowKey = Bytes.toString(result.getRow());
-			// String sensorID = rowKey.substring(0, rowKey.indexOf("-"));
 
 			String[] rowKeySplit = rowKey.split("-");
 
@@ -302,9 +286,10 @@ public class Merge {
 		int speedLayerResultsCount = 0;
 		for (Result result = speedLayer.next(); (result != null); result = speedLayer
 				.next()) {
+			
+			speedLayerResultsCount++;
 			// gets rowkey
 			String rowKey = Bytes.toString(result.getRow());
-			// String sensorID = rowKey.substring(0, rowKey.indexOf("-"));
 
 			String[] rowKeySplit = rowKey.split("-");
 
@@ -334,13 +319,55 @@ public class Merge {
 			resultSet.add(sensorReading);
 
 		}
+		
+		//Add in speed table 2
+		// look up id then look up timestamp if not there add to map. otherwise
+		// skip
+		int speedLayer2ResultsCount = 0;
+		for (Result result = speedLayer2.next(); (result != null); result = speedLayer2
+				.next()) {
+			
+			speedLayer2ResultsCount++;
+			// gets rowkey
+			String rowKey = Bytes.toString(result.getRow());
+			// String sensorID = rowKey.substring(0, rowKey.indexOf("-"));
+
+			String[] rowKeySplit = rowKey.split("-");
+
+			try {
+				if (rowKeySplit.length != 2)
+					throw new Exception();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				System.out.println("did not split correctly!");
+
+				return null;
+			}
+
+			String speedLayer2SensorId = rowKeySplit[0];
+			String speedLayer2Timestamp = rowKeySplit[1];
+
+			// read the value of table record i.e. sensor reading
+			String speedLayer2Value = Bytes.toString(result.getValue(
+					Bytes.toBytes("d"), Bytes.toBytes("val")));
+
+			// Create Reading object
+			Reading sensorReading = new Reading(speedLayer2SensorId,
+					speedLayer2Timestamp, speedLayer2Value);
+
+			// Add to set
+			resultSet.add(sensorReading);
+
+		}
 
 		System.out.println("****Summary****");
 		System.out.println("Number in merged results "
-				+ servingLayerResultsCount + speedLayerResultsCount);
+				+ servingLayerResultsCount + speedLayerResultsCount + speedLayer2ResultsCount);
 		System.out.println("Number in serving results "
 				+ servingLayerResultsCount);
 		System.out.println("Number in speed results " + speedLayerResultsCount);
+		System.out.println("Number in speed results " + speedLayer2ResultsCount);
 
 		return resultSet;
 	}

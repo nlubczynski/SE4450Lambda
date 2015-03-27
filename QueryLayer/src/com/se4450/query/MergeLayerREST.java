@@ -2,6 +2,7 @@ package com.se4450.query;
 
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -10,6 +11,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONArray;
+import org.json.JSONException;
 
 /**
  * Servlet implementation class MergeLayerREST
@@ -48,7 +50,7 @@ public class MergeLayerREST extends HttpServlet {
 		// if there was a query parameter parse and build query
 		else {
 			queryParameters = queryString.split("&");
-			String sensorIdRequested = null;
+			ArrayList<String> sensorIdRequested = new ArrayList<String>();
 			String startRowKeyRequested = null;
 			String endRowKeyRequeted = null;
 
@@ -59,7 +61,13 @@ public class MergeLayerREST extends HttpServlet {
 				String parameterValue = parameterSplit[1];
 
 				if (parameterId.equals("id")) {
-					sensorIdRequested = parameterValue;
+					String [] idList = parameterValue.split(",");
+					for(String id : idList)
+					{
+						
+						sensorIdRequested.add(id);
+					}
+					
 				} else if (parameterId.equals("start")) {
 					startRowKeyRequested = parameterValue;
 				} else if (parameterId.equals("end")) {
@@ -67,9 +75,23 @@ public class MergeLayerREST extends HttpServlet {
 				}
 
 			}
-
-			requestResponse = com.se4450.merge.Merge.querySensorData(
-					sensorIdRequested, startRowKeyRequested, endRowKeyRequeted);
+			//get first value
+			requestResponse = new JSONArray();
+			
+			for(int i = 0; i<sensorIdRequested.size(); i++)
+			{
+				JSONArray newRequestResponse = com.se4450.merge.Merge.querySensorData(
+						sensorIdRequested.get(i), startRowKeyRequested, endRowKeyRequeted);
+				
+				for (int j = 0; j < newRequestResponse.length(); j++) {
+					try {
+						requestResponse.put(newRequestResponse.getJSONObject(j));
+					} catch (JSONException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				}
+			}
 		}
 		response.setContentType("application/json");
 
