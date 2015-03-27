@@ -37,17 +37,8 @@ namespace FrontEndApp.Controllers
                 WebClient wc = new WebClient();
                 try
                 {
-                    // Get the sensor ids of the sensors attached to the build
-                    var sensorIds = string.Join(",", 
-                        database.Sensors.Join(database.Buildings, 
-                                sensor => sensor.BuildingID, 
-                                building => building.ID, 
-                                (sensor, building) => new { Sensor = sensor, Building = building })
-                       .Where(joined => joined.Building.ID == buildingID)
-                       .Select(joined => joined.Sensor.ID));
-
                     var result =
-                        wc.DownloadString("http://129.100.225.187:4880/MergeLayerServer/QueryLayerMerge?id=" + sensorIds + "&start=" + start + "&end=" + end);
+                        wc.DownloadString("http://129.100.225.187:4880/MergeLayerServer/QueryLayerMerge?buildingID=" + buildingID + "&start=" + start + "&end=" + end);
 
                     // Parse the result
                     //JavaScriptSerializer js = new JavaScriptSerializer();

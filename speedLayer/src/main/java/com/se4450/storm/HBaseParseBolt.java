@@ -15,7 +15,7 @@ import backtype.storm.tuple.Values;
  * @author NikLubz
  *
  */
-public class ParseBolt extends BaseBasicBolt {
+public class HBaseParseBolt extends BaseBasicBolt {
 
 	private static final long serialVersionUID = 1353253736861496000L;
 

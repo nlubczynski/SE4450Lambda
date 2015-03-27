@@ -20,7 +20,7 @@ public class SE4450Topology {
 
 	public static final String HDFS_BOLT = "hdfsBolt";
 
-	public static final String PARSING_BOLT = "parsedData";
+	public static final String HBASE_PARSING_BOLT = "parsedData";
 	public static final String PARSING_BOLT_STREAM = "parsedStream";
 	public static final String PARSING_BOLT_ID = "sensorID";
 	public static final String PARSING_BOLT_VALUE = "sensorValue";
@@ -30,6 +30,7 @@ public class SE4450Topology {
 	public static final String FORMAT_SENSOR_TO_HBASE_BOLT = "formatSensorToHbase";
 	public static final String FORMAT_SENSOR_TO_HBASE_BOLT_STREAM = "formatSensorToHbaseStream";
 	public static final String FORMAT_SENSOR_TO_HBASE_BOLT_KEY = "formatSensorToHbaseKey";
+	public static final String FORMAT_SENSOR_TO_HBASE_BOLT_COLUMN_QUALIFIER = "formatSensorToHbaseColumnQualifier";
 	public static final String FORMAT_SENSOR_TO_HBASE_BOLT_VALUE = "val";
 
 	public static final String HBASE_SENSOR_BOLT = "hbaseBolt";
@@ -67,7 +68,7 @@ public class SE4450Topology {
 			// parallelism hint to set the number of workers
 			conf.setNumWorkers(Consts.STORM_NUMBER_OF_WORKERS);
 			// submit the topology
-			StormSubmitter.submitTopology(Consts.STORM_TOPOLOGY_NAME, conf,
+			StormSubmitter.submitTopology(Consts.STORM_TOPOLOGY_BUILDING_NAME, conf,
 					createTopology());
 		}
 		// Otherwise, we are running locally
@@ -78,7 +79,7 @@ public class SE4450Topology {
 			// LocalCluster is used to run locally
 			LocalCluster cluster = new LocalCluster();
 			// submit the topology
-			cluster.submitTopology(Consts.STORM_TOPOLOGY_NAME, conf,
+			cluster.submitTopology(Consts.STORM_TOPOLOGY_BUILDING_NAME, conf,
 					createTopology());
 			// sleep
 			Thread.sleep(10000);
@@ -100,20 +101,20 @@ public class SE4450Topology {
 		// reads from KAFKA_SPOUT
 		// outputs parsed data in the form (int:sensorID, int:sensorValue,
 		// long:timestamp, int:buildingID) to PARSING_BOLT
-		builder.setBolt(PARSING_BOLT, new ParseBolt(),
+		builder.setBolt(HBASE_PARSING_BOLT, new HBaseParseBolt(),
 				Consts.STORM_FORMAT_BOLT_PARALLELISM).shuffleGrouping(
 				KAFKA_SPOUT);
 
 		// Add HDFS parse bolt to split/format incoming Kafka stream
 		// reads from KAFKA_SPOUT
-		// outputs parsed data in the form (string: id, long:timestamp, int:
+		// outputs parsed data in the form (string: key, int:value, int:
 		// buildingID) to PARSING_BOLT
 		builder.setBolt(HDFS_PARSE_BOLT, new HdfsParseBolt(),
 				Consts.STORM_FORMAT_BOLT_PARALLELISM).shuffleGrouping(
 				KAFKA_SPOUT);
 
-		// Add SensorToHDFS to format sensor data for HDFS
-		// reads from PARSING_BOLT : PARSING_BOLT_STREAM
+		// Add HDFS bolt to write the data to hdfs
+		// reads from HDFS_PARSE_BOLT : HDFS_PARSING_BOLT_STREAM
 		builder.setBolt(HDFS_BOLT, TopologyUtilities.getHdfsBolt(),
 				Consts.STORM_HDFS_BOLT_PARALLELISM).shuffleGrouping(
 				HDFS_PARSE_BOLT, HDFS_PARSING_BOLT_STREAM);
@@ -124,7 +125,7 @@ public class SE4450Topology {
 		// FORMAT_SENSOR_TO_HBASE_BOLT
 		builder.setBolt(FORMAT_SENSOR_TO_HBASE_BOLT, new SensorToHBase(),
 				Consts.STORM_HBASE_SENSOR_BOLT_PARALLELISM).shuffleGrouping(
-				PARSING_BOLT, PARSING_BOLT_STREAM);
+				HBASE_PARSING_BOLT, PARSING_BOLT_STREAM);
 
 		// Add two HBaseBolts to write raw sensor data to the
 		// alternatingly deleted speed layers
@@ -133,14 +134,14 @@ public class SE4450Topology {
 		builder.setBolt(
 				HBASE_SENSOR_BOLT + "1",
 				TopologyUtilities
-						.getSensorDataHBaseBolt(Consts.HBASE_TABLE_NAME_SENSORS_SPEED_LAYER),
+						.getSensorDataHBaseBolt(Consts.HBASE_TABLE_NAME_SENSORS_SPEED_LAYER_WITH_BUILDING),
 				Consts.STORM_HBASE_SENSOR_BOLT_PARALLELISM)
 				.shuffleGrouping(FORMAT_SENSOR_TO_HBASE_BOLT,
 						FORMAT_SENSOR_TO_HBASE_BOLT_STREAM);
 		builder.setBolt(
 				HBASE_SENSOR_BOLT + "2",
 				TopologyUtilities
-						.getSensorDataHBaseBolt(Consts.HBASE_TABLE_NAME_SENSORS_SPEED_LAYER2),
+						.getSensorDataHBaseBolt(Consts.HBASE_TABLE_NAME_SENSORS_SPEED_LAYER_WITH_BUILDING2),
 				Consts.STORM_HBASE_SENSOR_BOLT_PARALLELISM)
 				.shuffleGrouping(FORMAT_SENSOR_TO_HBASE_BOLT,
 						FORMAT_SENSOR_TO_HBASE_BOLT_STREAM);

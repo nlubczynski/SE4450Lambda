@@ -16,6 +16,7 @@ import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
 
 import com.se4450.shared.Consts;
+import com.se4450.storm.hbase.Se4450HbaseMapper;
 
 import backtype.storm.spout.SchemeAsMultiScheme;
 import backtype.storm.tuple.Fields;
@@ -59,11 +60,10 @@ public class TopologyUtilities {
 	public static HBaseBolt getSensorDataHBaseBolt(String tablename) {
 
 		// Create a SimpleHBaseMapper with the values from a SensorToHBase bolt
-		SimpleHBaseMapper mapper = new SimpleHBaseMapper()
+		Se4450HbaseMapper mapper = new Se4450HbaseMapper()
 				.withRowKeyField(SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_KEY)
-				.withColumnFields(
-						new Fields(
-								SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_VALUE))
+				.withColunQualifierField(SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_COLUMN_QUALIFIER)
+				.withValueField(SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_VALUE)
 				.withColumnFamily(Consts.HBASE_COLUMN_FAMILY_SPEED_LAYER);
 
 		return new HBaseBolt(tablename,

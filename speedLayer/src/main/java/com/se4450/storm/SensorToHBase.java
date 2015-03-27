@@ -18,18 +18,25 @@ public class SensorToHBase extends BaseBasicBolt {
 		int sensorValue = input.getInteger(1);
 		// Get Time stamp
 		long timestamp = input.getLong(2);
-		
-		// Make a nice string
-		String key = sensorID + "-" + timestamp;
+		// Get building id
+		int buildingId = input.getInteger(3);
 
-		collector.emit(SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_STREAM, new Values(key,
-				String.valueOf(sensorValue)));
+		// Key = buildingID-timestamp
+		String key = buildingId + "-" + timestamp;
+
+		collector.emit(
+				SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_STREAM,
+				new Values(key, String.valueOf(sensorID), String
+						.valueOf(sensorValue)));
 	}
 
 	public void declareOutputFields(OutputFieldsDeclarer declarer) {
-		declarer.declareStream(SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_STREAM, new Fields(
-				SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_KEY,
-				SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_VALUE));
+		declarer.declareStream(
+				SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_STREAM,
+				new Fields(
+						SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_KEY,
+						SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_COLUMN_QUALIFIER,
+						SE4450Topology.FORMAT_SENSOR_TO_HBASE_BOLT_VALUE));
 	}
 
 }

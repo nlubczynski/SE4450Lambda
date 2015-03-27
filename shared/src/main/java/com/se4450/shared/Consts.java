@@ -36,6 +36,7 @@ public final class Consts {
 	/* Storm */
 	// Topology configuration
 	public static final String STORM_TOPOLOGY_NAME = "SpeedLayer";
+	public static final String STORM_TOPOLOGY_BUILDING_NAME = "SpeedLayerBuilding";
 	public static final String STORM_HBASE_CONF_FILE = "hbase.conf";
 	public static final String STORM_HBASE_SITE_XML = "conf/hbase-site.xml";			
 	public static final int STORM_KAFKA_SPOUT_PARALLELISM = 2;
@@ -52,6 +53,8 @@ public final class Consts {
 	/* HBase*/
 	public static final String HBASE_TABLE_NAME_SENSORS_SPEED_LAYER = "SensorValuesSpeedLayer";
 	public static final String HBASE_TABLE_NAME_SENSORS_SPEED_LAYER2 = "SensorValuesSpeedLayer2";
+	public static final String HBASE_TABLE_NAME_SENSORS_SPEED_LAYER_WITH_BUILDING = "BuildingSpeedLayer";
+	public static final String HBASE_TABLE_NAME_SENSORS_SPEED_LAYER_WITH_BUILDING2 = "BuildingSpeedLayer2";
 	public static final String HBASE_COLUMN_FAMILY_SPEED_LAYER = "d";
 	
 }
