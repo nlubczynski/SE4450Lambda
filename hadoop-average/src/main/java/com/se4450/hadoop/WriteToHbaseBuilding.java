@@ -24,7 +24,7 @@ public class WriteToHbaseBuilding {
 
 	public static class Map extends Mapper<LongWritable, Text, Text, Text> {
 
-		// format of hdfs line: id reading time building id
+		// format of hdfs line: id-time reading building id
 		// sensorId-timestamp value
 
 		public void map(LongWritable key, Text value, Context context)
@@ -35,22 +35,19 @@ public class WriteToHbaseBuilding {
 			if (tokenArray.length < 2)
 				return;
 
-			String sensorID = tokenArray[0];
-			String sensorReading = tokenArray[1];
-			String timestamp = tokenArray[1];
-			String buildingID = tokenArray[1];
+			// split up input of id-timestamp
+			String[] sensorIDTimestampArray = tokenArray[0].split("-");
 
-			StringBuilder mapValueSB = new StringBuilder();
-			mapValueSB.append(sensorID);
-			mapValueSB.append(" ");
-			mapValueSB.append(sensorReading);
-			
-			StringBuilder keyValueSB = new StringBuilder();
-			keyValueSB.append(buildingID);
-			keyValueSB.append(" ");
-			mapValueSB.append(timestamp);
-			
-			context.write(new Text(keyValueSB.toString()), new Text(mapValueSB.toString())); // create a
+			// save values as local variables
+			String sensorID = sensorIDTimestampArray[0];
+			String sensorReading = tokenArray[1];
+			String timestamp = sensorIDTimestampArray[1];
+			String buildingID = tokenArray[2];
+
+			String mapValue = sensorID + " " + sensorReading;
+			String keyValue = buildingID + "-" + timestamp;
+
+			context.write(new Text(keyValue), new Text(mapValue));
 		}
 	}
 
@@ -63,10 +60,10 @@ public class WriteToHbaseBuilding {
 			// iterate through values and write to table
 			for (Text value : values) {
 
-				String [] mapValueArray = value.toString().split(" ");
+				String[] mapValueArray = value.toString().split(" ");
 				String sensorID = mapValueArray[0];
 				String reading = mapValueArray[1];
-				
+
 				Put put = new Put(Bytes.toBytes(key.toString()));
 				put.add(Bytes.toBytes("d"), Bytes.toBytes(sensorID),
 						Bytes.toBytes(reading));

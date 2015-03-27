@@ -53,6 +53,7 @@ public class MergeLayerREST extends HttpServlet {
 			ArrayList<String> sensorIdRequested = new ArrayList<String>();
 			String startRowKeyRequested = null;
 			String endRowKeyRequeted = null;
+			String buildingID = null;
 
 			for (String parameter : queryParameters) {
 				String[] parameterSplit = parameter.split("=");
@@ -60,39 +61,47 @@ public class MergeLayerREST extends HttpServlet {
 				String parameterId = parameterSplit[0];
 				String parameterValue = parameterSplit[1];
 
-				if (parameterId.equals("id")) {
-					String [] idList = parameterValue.split(",");
-					for(String id : idList)
-					{
-						
+				if (parameterId.equals("sensorID")) {
+					String[] idList = parameterValue.split(",");
+					for (String id : idList) {
+
 						sensorIdRequested.add(id);
 					}
-					
+
 				} else if (parameterId.equals("start")) {
 					startRowKeyRequested = parameterValue;
 				} else if (parameterId.equals("end")) {
 					endRowKeyRequeted = parameterValue;
+				} else if (parameterId.equals("buildingID")) {
+					buildingID = parameterValue;
 				}
 
 			}
-			//get first value
+			// get first value
 			requestResponse = new JSONArray();
-			
-			for(int i = 0; i<sensorIdRequested.size(); i++)
-			{
-				JSONArray newRequestResponse = com.se4450.merge.Merge.querySensorData(
-						sensorIdRequested.get(i), startRowKeyRequested, endRowKeyRequeted);
-				
-				for (int j = 0; j < newRequestResponse.length(); j++) {
-					try {
-						requestResponse.put(newRequestResponse.getJSONObject(j));
-					} catch (JSONException e) {
-						// TODO Auto-generated catch block
-						e.printStackTrace();
+
+			if (sensorIdRequested.size() > 0) {
+				for (int i = 0; i < sensorIdRequested.size(); i++) {
+					JSONArray newRequestResponse = com.se4450.merge.Merge
+							.querySensorData(sensorIdRequested.get(i),
+									startRowKeyRequested, endRowKeyRequeted);
+
+					for (int j = 0; j < newRequestResponse.length(); j++) {
+						try {
+							requestResponse.put(newRequestResponse
+									.getJSONObject(j));
+						} catch (JSONException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
 					}
 				}
+			} else {
+				requestResponse = com.se4450.merge.Merge.queryBuildingData(
+						buildingID, startRowKeyRequested, endRowKeyRequeted);
 			}
 		}
+
 		response.setContentType("application/json");
 
 		PrintWriter out = response.getWriter();

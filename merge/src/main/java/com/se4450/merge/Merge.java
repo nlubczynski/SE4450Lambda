@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashSet;
+import java.util.NavigableMap;
+import java.util.NavigableSet;
 import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
@@ -89,6 +91,123 @@ public class Merge {
 
 	public static JSONArray queryAllData() {
 		return getData(null, null);
+	}
+	
+	/**
+	 * public method server calls to query building data
+	 * @param buildingID id to get sensors for
+	 * @param epoch timestampStart time range start - inclusive
+	 * @param epoch timestampEnd time range end -inclusive
+	 * @return a JSONArray of all the information
+	 */
+	
+	public static JSONArray queryBuildingData(String buildingID,
+			String timestampStart, String timestampEnd) {
+
+		if (timestampStart != null)
+			timestampStart = String.format("%013d",
+					Long.parseLong(timestampStart));
+		if (timestampEnd != null)
+			timestampEnd = String.format("%013d", Long.parseLong(timestampEnd));
+
+		// create row key filter strings to pass to scan class.
+		// Scanner will get data between these two values.
+
+		// start is inclusive
+		String startRowKeyString = buildRowKeyFilterString(buildingID,
+				timestampStart);
+
+		// End date is exclusive so must fix to be inclusive
+		String endRowKeyString = null;
+
+		// if timestamp is not null add 1 ms to increment.
+		if (timestampEnd != null) {
+			String timestampEndFixed = String.format("%013d",
+					Long.parseLong(timestampEnd) + 1);
+
+			// create row key filter based on this new parameter
+			endRowKeyString = buildRowKeyFilterString(buildingID,
+					timestampEndFixed);
+		}
+		// if timestamp is null increment sensorId to next value as we want to
+		// get all the values for that sensor
+		else {
+			String buildingIdFixed = String
+					.valueOf((Long.parseLong(buildingID) + 1)+"-");
+
+			// create row key filter based on this new paramaeters
+			endRowKeyString = buildRowKeyFilterString(buildingIdFixed,
+					timestampEnd);
+
+		}
+
+		return getBuildingData(startRowKeyString, endRowKeyString);
+
+	}
+
+	/**
+	 * Gets all data for building in serving and speed layers based on two row key filters
+	 * 
+	 * @return JSONArray of data
+	 */
+	private static JSONArray getBuildingData(String startRowKeyString,
+			String endRowKeyString) {
+		Configuration conf = HBaseConfiguration.create();
+
+		conf = Utilities.loadHBaseConfiguration(conf);
+
+		// get table references
+		HTable servingLayerTable = getTableReference(
+				"BuildingServingLayer", conf);
+		HTable speedLayerTable = getTableReference("BuildingSpeedLayer",
+				conf);
+		
+		HTable speedLayerTable2 = getTableReference("BuildingSpeedLayer2",
+				conf); 
+
+		// default families
+		ArrayList<String> families = new ArrayList<String>();
+		families.add("d");
+
+		// get table results
+		ResultScanner servingLayerTableResults = scanHBaseTable(
+				servingLayerTable, families, startRowKeyString, endRowKeyString);
+		ResultScanner speedLayerTableResults = scanHBaseTable(speedLayerTable,
+				families, startRowKeyString, endRowKeyString);
+		ResultScanner speedLayer2TableResults = scanHBaseTable(speedLayerTable2,
+				families, startRowKeyString, endRowKeyString);
+
+		Set<Reading> results = null;
+
+		try {
+			results = mergeSpeedAndServingBuilding(servingLayerTableResults,
+					speedLayerTableResults,speedLayer2TableResults);
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+			System.out.println("Could not print out results");
+
+			return null;
+		}
+
+		JSONArray resultsJSON = toJSON(results);
+
+		servingLayerTableResults.close();
+		speedLayerTableResults.close();
+		speedLayer2TableResults.close();
+
+		try {
+			servingLayerTable.close();
+			speedLayerTable.close();
+			speedLayerTable2.close();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+
+			System.out.println("Could not close hTable reference");
+		}
+
+		return resultsJSON;
 	}
 
 	/**
@@ -238,6 +357,7 @@ public class Merge {
 		return scanner;
 	}
 
+	
 	private static Set<Reading> mergeSpeedAndServing(
 			ResultScanner servingLayer, ResultScanner speedLayer, ResultScanner speedLayer2)
 			throws IOException {
@@ -371,7 +491,170 @@ public class Merge {
 
 		return resultSet;
 	}
+	private static Set<Reading> mergeSpeedAndServingBuilding(
+			ResultScanner servingLayer, ResultScanner speedLayer, ResultScanner speedLayer2)
+			throws IOException {
 
+		Set<Reading> resultSet = new HashSet<Reading>();
+
+		// For Debug purposed only
+		int servingLayerResultsCount = 0;
+		for (Result result = servingLayer.next(); (result != null); result = servingLayer
+				.next()) {
+
+			servingLayerResultsCount++;
+			// gets rowkey
+			String rowKey = Bytes.toString(result.getRow());
+
+			String[] rowKeySplit = rowKey.split("-");
+
+			try {
+				if (rowKeySplit.length != 2)
+					throw new Exception();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				System.out.println("did not split correctly!");
+
+				return null;
+			}
+
+			String servingLayerTimestamp = rowKeySplit[1];
+
+			// String rowKeySplit = rowKey.
+			//for column family d of row with rowkey , rowkey, get a map of qualifier (id) to value (sensor Reading)
+			NavigableMap<byte[],byte[]> readingsMap = result.getFamilyMap(
+					Bytes.toBytes("d"));
+
+			NavigableSet<byte[]> servingLayerRowSensorIDList = readingsMap.descendingKeySet();
+			
+			for(byte[] id : servingLayerRowSensorIDList)
+			{
+				//get id and value
+				String servingLayerValue = Bytes.toString(readingsMap.get(id));
+				String servingLayerSensorId = Bytes.toString(id);
+				
+				// Create Reading object
+				Reading sensorReading = new Reading(servingLayerSensorId,
+						servingLayerTimestamp, servingLayerValue);
+				
+
+				// Add to set
+				resultSet.add(sensorReading);
+			}
+		}
+
+		// look up id then look up timestamp if not there add to map. otherwise
+		// skip
+		int speedLayerResultsCount = 0;
+		for (Result result = speedLayer.next(); (result != null); result = speedLayer
+				.next()) {
+			
+			speedLayerResultsCount++;
+			// gets rowkey
+			String rowKey = Bytes.toString(result.getRow());
+
+			String[] rowKeySplit = rowKey.split("-");
+
+			try {
+				if (rowKeySplit.length != 2)
+					throw new Exception();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				System.out.println("did not split correctly!");
+
+				return null;
+			}
+
+			String speedLayerTimestamp = rowKeySplit[1];
+
+			// String rowKeySplit = rowKey.
+			//for column family d of row with rowkey , rowkey, get a map of qualifier (id) to value (sensor Reading)
+			NavigableMap<byte[],byte[]> readingsMap = result.getFamilyMap(
+					Bytes.toBytes("d"));
+
+			NavigableSet<byte[]> speedLayerRowSensorIDList = readingsMap.descendingKeySet();
+			
+			for(byte[] id : speedLayerRowSensorIDList)
+			{
+				//get id and value
+				String speedLayerValue = Bytes.toString(readingsMap.get(id));
+				String speedLayerSensorId = Bytes.toString(id);
+				
+				// Create Reading object
+				Reading sensorReading = new Reading(speedLayerSensorId,
+						speedLayerTimestamp, speedLayerValue);
+				
+
+				// Add to set
+				resultSet.add(sensorReading);
+			}
+
+		}
+		
+		//Add in speed table 2
+		// look up id then look up timestamp if not there add to map. otherwise
+		// skip
+		int speedLayer2ResultsCount = 0;
+		for (Result result = speedLayer2.next(); (result != null); result = speedLayer2
+				.next()) {
+			
+			speedLayer2ResultsCount++;
+			// gets rowkey
+			String rowKey = Bytes.toString(result.getRow());
+			// String sensorID = rowKey.substring(0, rowKey.indexOf("-"));
+
+			String[] rowKeySplit = rowKey.split("-");
+
+			try {
+				if (rowKeySplit.length != 2)
+					throw new Exception();
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+				System.out.println("did not split correctly!");
+
+				return null;
+			}
+
+			String speedLayer2Timestamp = rowKeySplit[1];
+
+			// String rowKeySplit = rowKey.
+			//for column family d of row with rowkey , rowkey, get a map of qualifier (id) to value (sensor Reading)
+			NavigableMap<byte[],byte[]> readingsMap = result.getFamilyMap(
+					Bytes.toBytes("d"));
+
+			NavigableSet<byte[]> speedLayer2RowSensorIDList = readingsMap.descendingKeySet();
+			
+			for(byte[] id : speedLayer2RowSensorIDList)
+			{
+				//get id and value
+				String speedLayer2Value = Bytes.toString(readingsMap.get(id));
+				String speedLayer2SensorId = Bytes.toString(id);
+				
+				// Create Reading object
+				Reading sensorReading = new Reading(speedLayer2SensorId,
+						speedLayer2Timestamp, speedLayer2Value);
+				
+
+				// Add to set
+				resultSet.add(sensorReading);
+			}
+
+		}
+
+		System.out.println("****Summary****");
+		System.out.println("Number in merged results "
+				+ servingLayerResultsCount + speedLayerResultsCount + speedLayer2ResultsCount);
+		System.out.println("Number in serving results "
+				+ servingLayerResultsCount);
+		System.out.println("Number in speed results " + speedLayerResultsCount);
+		System.out.println("Number in speed results " + speedLayer2ResultsCount);
+
+		return resultSet;
+	}
+	
 	private static JSONArray toJSON(Set<Reading> resultSet) {
 		JSONArray resultsArray = new JSONArray();
 
