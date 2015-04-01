@@ -1,0 +1,5 @@
+/target/
+/JarFiles/
+/JarFiles/*
+/WebContent/
+*.war
