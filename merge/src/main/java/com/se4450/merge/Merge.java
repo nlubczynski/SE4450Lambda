@@ -39,8 +39,9 @@ public class Merge {
 				timestampStart);
 		String endRowKeyString = formatEndRowKeyString(sensorId, timestampEnd);
 
-		// get data based
-		return getData(startRowKeyString, endRowKeyString);
+		Set<Reading> resultSet = getData(startRowKeyString, endRowKeyString);
+
+		return toJSON(resultSet);
 	}
 
 	/**
@@ -49,7 +50,9 @@ public class Merge {
 	 * @return JSONArray of all data in Serving and Speed layers
 	 */
 	public static JSONArray queryAllData() {
-		return getData(null, null);
+		Set<Reading> resultSet = getData(null, null);
+
+		return toJSON(resultSet);
 	}
 
 	/**
@@ -70,8 +73,10 @@ public class Merge {
 				timestampStart);
 		String endRowKeyString = formatEndRowKeyString(buildingID, timestampEnd);
 
-		return getBuildingData(startRowKeyString, endRowKeyString);
+		Set<Reading> resultSet = getBuildingData(startRowKeyString,
+				endRowKeyString);
 
+		return toJSON(resultSet);
 	}
 
 	/**
@@ -87,6 +92,7 @@ public class Merge {
 	 */
 	private static String formatStartRowKeyString(String id,
 			String timestampStart) {
+
 		// timestamps are saved in HBase as 13 digits. Need to make timestamps
 		// passed in from HTTP get request 13 digits long so HBase can use them
 		// to filter scan. Otherwise 2 would be interpreted as 2000000000000
@@ -113,18 +119,13 @@ public class Merge {
 	 */
 	private static String formatEndRowKeyString(String id, String timestampEnd) {
 
-		// create row key filter strings to pass to scan class.
-		// Scanner will get data up until this value. So need to make inclusive.
-
 		String endRowKeyString = null;
 
-		// if timestamp is not null add 1 ms
 		if (timestampEnd != null) {
+			// format to ensure data at current timestamp is retrieved
 			timestampEnd = formatTimestampEnd(timestampEnd);
-		}
-		// if timestamp is null increment sensorId to next value as we want to
-		// get all the values for the sensorId passed in
-		else {
+		} else {
+			// format to ensure all data for the given timestamp is retrieved
 			id = formatSensorId(id);
 		}
 
@@ -183,8 +184,9 @@ public class Merge {
 	 * 
 	 * @return JSONArray of data
 	 */
-	private static JSONArray getBuildingData(String startRowKeyString,
+	private static Set<Reading> getBuildingData(String startRowKeyString,
 			String endRowKeyString) {
+
 		Configuration conf = HBaseConfiguration.create();
 
 		conf = Utilities.loadHBaseConfiguration(conf);
@@ -214,14 +216,11 @@ public class Merge {
 			results = mergeSpeedAndServingBuilding(servingLayerTableResults,
 					speedLayerTableResults, speedLayer2TableResults);
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 			System.out.println("Could not print out results");
 
 			return null;
 		}
-
-		JSONArray resultsJSON = toJSON(results);
 
 		servingLayerTableResults.close();
 		speedLayerTableResults.close();
@@ -232,13 +231,12 @@ public class Merge {
 			speedLayerTable.close();
 			speedLayerTable2.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 
 			System.out.println("Could not close hTable reference");
 		}
 
-		return resultsJSON;
+		return results;
 	}
 
 	/**
@@ -251,7 +249,7 @@ public class Merge {
 	 *            returned.
 	 * @return array of HBase data
 	 */
-	private static JSONArray getData(String startRowKeyString,
+	private static Set<Reading> getData(String startRowKeyString,
 			String endRowKeyString) {
 		Configuration conf = HBaseConfiguration.create();
 
@@ -284,14 +282,11 @@ public class Merge {
 			results = mergeSpeedAndServing(servingLayerTableResults,
 					speedLayerTableResults, speedLayer2TableResults);
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 			System.out.println("Could not print out results");
 
 			return null;
 		}
-
-		JSONArray resultsJSON = toJSON(results);
 
 		servingLayerTableResults.close();
 		speedLayerTableResults.close();
@@ -300,19 +295,21 @@ public class Merge {
 			servingLayerTable.close();
 			speedLayerTable.close();
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 
 			System.out.println("Could not close hTable reference");
 		}
 
-		return resultsJSON;
+		return results;
 	}
 
 	/**
 	 * Builds the row key filter string based on an id and timestamp
-	 * @param id to be used in filter string
-	 * @param timestamp to be used in filter string
+	 * 
+	 * @param id
+	 *            to be used in filter string
+	 * @param timestamp
+	 *            to be used in filter string
 	 * @return a formatted value to use HBase scan
 	 */
 	private static String buildRowKeyFilterString(String id, String timestamp) {
@@ -337,11 +334,13 @@ public class Merge {
 		return sb.toString();
 	}
 
-	
 	/**
 	 * Gets the reference for an HTable
-	 * @param tableName name of the table
-	 * @param conf configuration class for connecting to HTable
+	 * 
+	 * @param tableName
+	 *            name of the table
+	 * @param conf
+	 *            configuration class for connecting to HTable
 	 * @return an hTable reference to the HBase table
 	 */
 	private static HTable getTableReference(String tableName, Configuration conf) {
@@ -349,7 +348,6 @@ public class Merge {
 		try {
 			hTable = new HTable(conf, tableName);
 		} catch (IOException e1) {
-			// TODO Auto-generated catch block
 			e1.printStackTrace();
 			System.out.println("Cannot create HTable reference " + tableName);
 			return null;
@@ -394,7 +392,6 @@ public class Merge {
 		try {
 			scanner = hTable.getScanner(scan);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 
 			System.out.println("*****ERROR*****");
@@ -408,9 +405,13 @@ public class Merge {
 
 	/**
 	 * Merges results from serving layer and both speed layers
-	 * @param servingLayer results from serving layer 
-	 * @param speedLayer results from speed layer
-	 * @param speedLayer2 results form speed layer 2
+	 * 
+	 * @param servingLayer
+	 *            results from serving layer
+	 * @param speedLayer
+	 *            results from speed layer
+	 * @param speedLayer2
+	 *            results form speed layer 2
 	 * @return a Set of the results
 	 * @throws IOException
 	 */
@@ -435,7 +436,6 @@ public class Merge {
 				if (rowKeySplit.length != 2)
 					throw new Exception();
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 				System.out.println("did not split correctly!");
 
@@ -473,7 +473,6 @@ public class Merge {
 				if (rowKeySplit.length != 2)
 					throw new Exception();
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 				System.out.println("did not split correctly!");
 
@@ -514,7 +513,6 @@ public class Merge {
 				if (rowKeySplit.length != 2)
 					throw new Exception();
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 				System.out.println("did not split correctly!");
 
@@ -552,9 +550,13 @@ public class Merge {
 
 	/**
 	 * Merges data from serving layer and both speed layers
-	 * @param servingLayer results from serving layer
-	 * @param speedLayer results from speed layer
-	 * @param speedLayer2 results from speed layer 2
+	 * 
+	 * @param servingLayer
+	 *            results from serving layer
+	 * @param speedLayer
+	 *            results from speed layer
+	 * @param speedLayer2
+	 *            results from speed layer 2
 	 * @return a Set of the results
 	 * @throws IOException
 	 */
@@ -579,7 +581,6 @@ public class Merge {
 				if (rowKeySplit.length != 2)
 					throw new Exception();
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 				System.out.println("did not split correctly!");
 
@@ -627,7 +628,6 @@ public class Merge {
 				if (rowKeySplit.length != 2)
 					throw new Exception();
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 				System.out.println("did not split correctly!");
 
@@ -678,7 +678,6 @@ public class Merge {
 				if (rowKeySplit.length != 2)
 					throw new Exception();
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 				System.out.println("did not split correctly!");
 
@@ -726,7 +725,9 @@ public class Merge {
 
 	/**
 	 * Converts a Set to JSONarray
-	 * @param resultSet Set of results
+	 * 
+	 * @param resultSet
+	 *            Set of results
 	 * @return a JSONArray of data
 	 */
 	private static JSONArray toJSON(Set<Reading> resultSet) {
