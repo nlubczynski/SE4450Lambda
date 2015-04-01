@@ -1,5 +1,8 @@
 package com.se4450.merge;
 
+import java.util.Set;
+
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -89,5 +92,23 @@ public class Reading {
 		}
 
 		return obj;
+	}
+	
+	/**
+	 * Converts a Set to JSONarray
+	 * 
+	 * @param resultSet
+	 *            Set of results
+	 * @return a JSONArray of data
+	 */
+	public static JSONArray toJSON(Set<Reading> resultSet) {
+		JSONArray resultsArray = new JSONArray();
+
+		for (Reading reading : resultSet) {
+			JSONObject obj = reading.serialize();
+			resultsArray.put(obj);
+		}
+
+		return resultsArray;
 	}
 }
