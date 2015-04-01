@@ -17,13 +17,13 @@ import org.json.JSONException;
  * Servlet implementation class MergeLayerREST
  */
 @WebServlet(name = "QueryLayerMerge", urlPatterns = { "/QueryLayerMerge" })
-public class MergeLayerREST extends HttpServlet {
+public class QueryLayerREST extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
 	/**
 	 * @see HttpServlet#HttpServlet()
 	 */
-	public MergeLayerREST() {
+	public QueryLayerREST() {
 		super();
 	}
 
