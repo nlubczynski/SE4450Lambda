@@ -32,10 +32,18 @@ public class WriteToHbaseTest {
 	}
 	
 	@Test
-	public void testMapper_WithBuildingID() throws IOException {
+	public void testMapper_tooManyInputs() throws IOException {
 		mapDriver.withInput(new LongWritable(),
 				new Text("1-12345679890123 100 1"));
 		mapDriver.withOutput(new Text("1-12345679890123"), new Text("100"));
 		mapDriver.runTest();
+	}
+	
+	@Test
+	public void testMapper_notEnoughInputs() throws IOException {
+		mapDriver.withInput(new LongWritable(), new Text("1-12345679890123"));
+
+		mapDriver.runTest();
+
 	}
 }

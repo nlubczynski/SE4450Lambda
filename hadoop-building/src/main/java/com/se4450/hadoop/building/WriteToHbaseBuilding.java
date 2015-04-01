@@ -38,6 +38,10 @@ public class WriteToHbaseBuilding {
 			// split up input of id-timestamp
 			String[] sensorIDTimestampArray = tokenArray[0].split("-");
 
+			//check that split on '-' created array of size two
+			if(sensorIDTimestampArray.length !=2)
+				return;
+			
 			// save values as local variables
 			String sensorID = sensorIDTimestampArray[0];
 			String sensorReading = tokenArray[1];
