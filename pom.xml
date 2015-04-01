@@ -9,7 +9,9 @@
 	<modules>
 		<module>shared</module>
 		<module>hadoop</module>
+		<module>hadoop-building</module>
 		<module>speedLayer</module>
+		<module>merge</module>
 	</modules>
 
 	<build>
