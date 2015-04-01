@@ -1,4 +1,4 @@
-package com.se4450.hadoop.test;
+package com.se4450.hadoop.building.test;
 
 import java.io.IOException;
 
@@ -11,9 +11,10 @@ import org.apache.hadoop.mrunit.mapreduce.ReduceDriver;
 import org.junit.Before;
 import org.junit.Test;
 
-import com.se4450.hadoop.WriteToHbase.Map;
+import com.se4450.hadoop.building.WriteToHbaseBuilding.Map;
 
-public class WriteToHbaseTest {
+public class WriteToHBaseBuildingTest {
+
 	MapDriver<LongWritable, Text, Text, Text> mapDriver;
 	ReduceDriver<Text, Text, ImmutableBytesWritable, Mutation> reduceDriver;
 
@@ -26,16 +27,9 @@ public class WriteToHbaseTest {
 	@Test
 	public void testMapper() throws IOException {
 		mapDriver.withInput(new LongWritable(),
-				new Text("1-12345679890123 100"));
-		mapDriver.withOutput(new Text("1-12345679890123"), new Text("100"));
+				new Text("1-12345679890123 100 5"));
+		mapDriver.withOutput(new Text("5-12345679890123"), new Text("1 100"));
 		mapDriver.runTest();
 	}
-	
-	@Test
-	public void testMapper_WithBuildingID() throws IOException {
-		mapDriver.withInput(new LongWritable(),
-				new Text("1-12345679890123 100 1"));
-		mapDriver.withOutput(new Text("1-12345679890123"), new Text("100"));
-		mapDriver.runTest();
-	}
+
 }
