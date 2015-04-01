@@ -4,8 +4,13 @@
 
 	<groupId>com.se4450</groupId>
 	<artifactId>merge</artifactId>
-	<version>0.0.1</version>
 	<packaging>jar</packaging>
+
+	<parent>
+		<groupId>com</groupId>
+		<artifactId>se4450</artifactId>
+		<version>0.0.1</version>
+	</parent>
 
 	<name>merge</name>
 	<url>http://maven.apache.org</url>

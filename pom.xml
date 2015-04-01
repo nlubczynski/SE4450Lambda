@@ -12,6 +12,7 @@
 		<module>hadoop-building</module>
 		<module>speedLayer</module>
 		<module>merge</module>
+		<module>queryLayer</module>
 	</modules>
 
 	<build>

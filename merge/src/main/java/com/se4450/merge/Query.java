@@ -78,8 +78,6 @@ public class Query {
 		return Reading.toJSON(resultSet);
 	}
 
-	
-
 	/**
 	 * Gets all data for building in serving and speed layers based on two row
 	 * key filters

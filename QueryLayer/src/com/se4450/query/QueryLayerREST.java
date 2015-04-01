@@ -13,6 +13,8 @@ import javax.servlet.http.HttpServletResponse;
 import org.json.JSONArray;
 import org.json.JSONException;
 
+import com.se4450.merge.Query;
+
 /**
  * Servlet implementation class MergeLayerREST
  */
@@ -34,6 +36,8 @@ public class QueryLayerREST extends HttpServlet {
 	protected void doGet(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
 
+		Query query = new Query();
+		
 		JSONArray requestResponse = null;
 
 		String queryString = request.getQueryString();
@@ -41,7 +45,7 @@ public class QueryLayerREST extends HttpServlet {
 
 		// if there was no query parameter get all data
 		if (queryString == null || queryString.isEmpty()) {
-			requestResponse = com.se4450.merge.Merge.queryAllData();
+			requestResponse = query.queryAllData();
 		}
 
 		// if there was a query parameter parse and build query
@@ -80,8 +84,7 @@ public class QueryLayerREST extends HttpServlet {
 			// sensor
 			if (sensorIdRequested.size() > 0) {
 				for (int i = 0; i < sensorIdRequested.size(); i++) {
-					JSONArray newRequestResponse = com.se4450.merge.Merge
-							.querySensorData(sensorIdRequested.get(i),
+					JSONArray newRequestResponse = query.querySensorData(sensorIdRequested.get(i),
 									startRowKeyRequested, endRowKeyRequeted);
 
 					for (int j = 0; j < newRequestResponse.length(); j++) {
@@ -97,7 +100,7 @@ public class QueryLayerREST extends HttpServlet {
 			// no sensor means a building id was requested so get all data for
 			// building
 			else {
-				requestResponse = com.se4450.merge.Merge.queryBuildingData(
+				requestResponse = query.queryBuildingData(
 						buildingID, startRowKeyRequested, endRowKeyRequeted);
 			}
 		}
