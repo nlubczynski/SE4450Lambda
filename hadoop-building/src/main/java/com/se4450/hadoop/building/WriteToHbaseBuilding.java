@@ -1,4 +1,4 @@
-package com.se4450.hadoop;
+package com.se4450.hadoop.building;
 
 import java.io.IOException;
 import java.util.HashMap;
