@@ -46,6 +46,11 @@
 			<artifactId>hbase-server</artifactId>
 			<version>0.98.10.1-hadoop2</version>
 		</dependency>
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.12</version>
+		</dependency>
 	</dependencies>
 	<build>
 		<plugins>

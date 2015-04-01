@@ -2,7 +2,6 @@ package com.se4450.merge;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.HashSet;
 import java.util.NavigableMap;
 import java.util.NavigableSet;
@@ -10,7 +9,6 @@ import java.util.Set;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.client.HBaseAdmin;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
@@ -19,16 +17,11 @@ import org.apache.hadoop.hbase.util.Bytes;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-import com.google.protobuf.ServiceException;
-
-/**
- * Hello world!
- *
- */
 public class Merge {
 
 	/**
-	 * Public method that server calls to get data for a specific data
+	 * Public method that server calls to get data for a specific sensor id, and
+	 * start and end time
 	 * 
 	 * @param sensorId
 	 *            sensor id to get data for
@@ -42,45 +35,12 @@ public class Merge {
 	public static JSONArray querySensorData(String sensorId,
 			String timestampStart, String timestampEnd) {
 
-		if (timestampStart != null)
-			timestampStart = String.format("%013d",
-					Long.parseLong(timestampStart));
-		if (timestampEnd != null)
-			timestampEnd = String.format("%013d", Long.parseLong(timestampEnd));
-
-		// create row key filter strings to pass to scan class.
-		// Scanner will get data between these two values.
-
-		// start is inclusive
-		String startRowKeyString = buildRowKeyFilterString(sensorId,
+		String startRowKeyString = formatStartRowKeyString(sensorId,
 				timestampStart);
+		String endRowKeyString = formatEndRowKeyString(sensorId, timestampEnd);
 
-		// End date is exclusive so must fix to be inclusive
-		String endRowKeyString = null;
-
-		// if timestamp is not null add 1 ms to increment.
-		if (timestampEnd != null) {
-			String timestampEndFixed = String.format("%013d",
-					Long.parseLong(timestampEnd) + 1);
-
-			// create row key filter based on this new parameter
-			endRowKeyString = buildRowKeyFilterString(sensorId,
-					timestampEndFixed);
-		}
-		// if timestamp is null increment sensorId to next value as we want to
-		// get all the values for that sensor
-		else {
-			String sensorIdFixed = String
-					.valueOf((Long.parseLong(sensorId) + 1)+"-");
-
-			// create row key filter based on this new paramaeters
-			endRowKeyString = buildRowKeyFilterString(sensorIdFixed,
-					timestampEnd);
-
-		}
-
+		// get data based
 		return getData(startRowKeyString, endRowKeyString);
-
 	}
 
 	/**
@@ -88,65 +48,138 @@ public class Merge {
 	 * 
 	 * @return JSONArray of all data in Serving and Speed layers
 	 */
-
 	public static JSONArray queryAllData() {
 		return getData(null, null);
 	}
-	
+
 	/**
 	 * public method server calls to query building data
-	 * @param buildingID id to get sensors for
-	 * @param epoch timestampStart time range start - inclusive
-	 * @param epoch timestampEnd time range end -inclusive
+	 * 
+	 * @param buildingID
+	 *            id to get sensors for
+	 * @param epoch
+	 *            timestampStart time range start - inclusive
+	 * @param epoch
+	 *            timestampEnd time range end -inclusive
 	 * @return a JSONArray of all the information
 	 */
-	
 	public static JSONArray queryBuildingData(String buildingID,
 			String timestampStart, String timestampEnd) {
 
-		if (timestampStart != null)
-			timestampStart = String.format("%013d",
-					Long.parseLong(timestampStart));
-		if (timestampEnd != null)
-			timestampEnd = String.format("%013d", Long.parseLong(timestampEnd));
-
-		// create row key filter strings to pass to scan class.
-		// Scanner will get data between these two values.
-
-		// start is inclusive
-		String startRowKeyString = buildRowKeyFilterString(buildingID,
+		String startRowKeyString = formatStartRowKeyString(buildingID,
 				timestampStart);
-
-		// End date is exclusive so must fix to be inclusive
-		String endRowKeyString = null;
-
-		// if timestamp is not null add 1 ms to increment.
-		if (timestampEnd != null) {
-			String timestampEndFixed = String.format("%013d",
-					Long.parseLong(timestampEnd) + 1);
-
-			// create row key filter based on this new parameter
-			endRowKeyString = buildRowKeyFilterString(buildingID,
-					timestampEndFixed);
-		}
-		// if timestamp is null increment sensorId to next value as we want to
-		// get all the values for that sensor
-		else {
-			String buildingIdFixed = String
-					.valueOf((Long.parseLong(buildingID) + 1)+"-");
-
-			// create row key filter based on this new paramaeters
-			endRowKeyString = buildRowKeyFilterString(buildingIdFixed,
-					timestampEnd);
-
-		}
+		String endRowKeyString = formatEndRowKeyString(buildingID, timestampEnd);
 
 		return getBuildingData(startRowKeyString, endRowKeyString);
 
 	}
 
 	/**
-	 * Gets all data for building in serving and speed layers based on two row key filters
+	 * HBase takes in a string to start the scan at. This method formats that
+	 * string. HBase will start scan at the row key which represents this
+	 * string.
+	 * 
+	 * @param id
+	 *            id to be used in HBase scan
+	 * @param timestampEnd
+	 *            the timestamp representing an end time for HBase scan
+	 * @return a string value to use in Hbase scan as an end bound.
+	 */
+	private static String formatStartRowKeyString(String id,
+			String timestampStart) {
+		// timestamps are saved in HBase as 13 digits. Need to make timestamps
+		// passed in from HTTP get request 13 digits long so HBase can use them
+		// to filter scan. Otherwise 2 would be interpreted as 2000000000000
+		timestampStart = formatTimestampStart(timestampStart);
+
+		// create row key filter strings to pass to scan class.
+		// Scanner will get data starting at this value
+
+		String startRowKeyString = buildRowKeyFilterString(id, timestampStart);
+
+		return startRowKeyString;
+	}
+
+	/**
+	 * HBase takes in a string to end the scan at. This method formats that
+	 * string. HBase will stop scan when the row key which represents this
+	 * string is encountered.
+	 * 
+	 * @param id
+	 *            id to be used in HBase scan
+	 * @param timestampEnd
+	 *            the timestamp representing an end time for HBase scan
+	 * @return a string value to use in Hbase scan as an end bound.
+	 */
+	private static String formatEndRowKeyString(String id, String timestampEnd) {
+
+		// create row key filter strings to pass to scan class.
+		// Scanner will get data up until this value. So need to make inclusive.
+
+		String endRowKeyString = null;
+
+		// if timestamp is not null add 1 ms
+		if (timestampEnd != null) {
+			timestampEnd = formatTimestampEnd(timestampEnd);
+		}
+		// if timestamp is null increment sensorId to next value as we want to
+		// get all the values for the sensorId passed in
+		else {
+			id = formatSensorId(id);
+		}
+
+		endRowKeyString = buildRowKeyFilterString(id, timestampEnd);
+
+		return endRowKeyString;
+	}
+
+	/**
+	 * Formats timestamp value to be 13 digits long
+	 * 
+	 * @param timestamp
+	 *            string value representing a timestamp value
+	 * @return timestamp value that is 13 digits long
+	 */
+	private static String formatTimestampStart(String timestamp) {
+
+		if (timestamp != null)
+			timestamp = String.format("%013d", Long.parseLong(timestamp));
+		return timestamp;
+	}
+
+	/**
+	 * Formats a string timestamp to be used as the end bound filter string in
+	 * HBase scan. Adds 1 ms to it and makes it 13 digits
+	 * 
+	 * @param timestamp
+	 *            is the timestamp to be formated
+	 * @return a formated string to be used in HBase scan
+	 */
+	private static String formatTimestampEnd(String timestamp) {
+
+		timestamp = String.format("%013d", Long.parseLong(timestamp) + 1);
+
+		return timestamp;
+	}
+
+	/**
+	 * Formats a sensorId to be used as the end bound filter string in HBase
+	 * scan. Adds 1 to sensorId and a dash delimiter.
+	 * 
+	 * @param id
+	 *            to be formated
+	 * @return a formated string to be used in HBase scan
+	 */
+	private static String formatSensorId(String id) {
+
+		id = String.valueOf((Long.parseLong(id) + 1) + "-");
+
+		return id;
+	}
+
+	/**
+	 * Gets all data for building in serving and speed layers based on two row
+	 * key filters
 	 * 
 	 * @return JSONArray of data
 	 */
@@ -157,13 +190,11 @@ public class Merge {
 		conf = Utilities.loadHBaseConfiguration(conf);
 
 		// get table references
-		HTable servingLayerTable = getTableReference(
-				"BuildingServingLayer", conf);
-		HTable speedLayerTable = getTableReference("BuildingSpeedLayer",
+		HTable servingLayerTable = getTableReference("BuildingServingLayer",
 				conf);
-		
-		HTable speedLayerTable2 = getTableReference("BuildingSpeedLayer2",
-				conf); 
+		HTable speedLayerTable = getTableReference("BuildingSpeedLayer", conf);
+
+		HTable speedLayerTable2 = getTableReference("BuildingSpeedLayer2", conf);
 
 		// default families
 		ArrayList<String> families = new ArrayList<String>();
@@ -174,14 +205,14 @@ public class Merge {
 				servingLayerTable, families, startRowKeyString, endRowKeyString);
 		ResultScanner speedLayerTableResults = scanHBaseTable(speedLayerTable,
 				families, startRowKeyString, endRowKeyString);
-		ResultScanner speedLayer2TableResults = scanHBaseTable(speedLayerTable2,
-				families, startRowKeyString, endRowKeyString);
+		ResultScanner speedLayer2TableResults = scanHBaseTable(
+				speedLayerTable2, families, startRowKeyString, endRowKeyString);
 
 		Set<Reading> results = null;
 
 		try {
 			results = mergeSpeedAndServingBuilding(servingLayerTableResults,
-					speedLayerTableResults,speedLayer2TableResults);
+					speedLayerTableResults, speedLayer2TableResults);
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -213,7 +244,12 @@ public class Merge {
 	/**
 	 * Gets all data in serving and speed layers based on two row key filters
 	 * 
-	 * @return JSONArray of data
+	 * @param startRowKeyString
+	 *            the row key to start scan on
+	 * @param endRowKeyString
+	 *            the row key to end scan on. Data from this row key will not be
+	 *            returned.
+	 * @return array of HBase data
 	 */
 	private static JSONArray getData(String startRowKeyString,
 			String endRowKeyString) {
@@ -226,9 +262,9 @@ public class Merge {
 				"SensorValuesServingLayer", conf);
 		HTable speedLayerTable = getTableReference("SensorValuesSpeedLayer",
 				conf);
-		
+
 		HTable speedLayerTable2 = getTableReference("SensorValuesSpeedLayer2",
-				conf); 
+				conf);
 
 		// default families
 		ArrayList<String> families = new ArrayList<String>();
@@ -239,14 +275,14 @@ public class Merge {
 				servingLayerTable, families, startRowKeyString, endRowKeyString);
 		ResultScanner speedLayerTableResults = scanHBaseTable(speedLayerTable,
 				families, startRowKeyString, endRowKeyString);
-		ResultScanner speedLayer2TableResults = scanHBaseTable(speedLayerTable2,
-				families, startRowKeyString, endRowKeyString);
+		ResultScanner speedLayer2TableResults = scanHBaseTable(
+				speedLayerTable2, families, startRowKeyString, endRowKeyString);
 
 		Set<Reading> results = null;
 
 		try {
 			results = mergeSpeedAndServing(servingLayerTableResults,
-					speedLayerTableResults,speedLayer2TableResults);
+					speedLayerTableResults, speedLayer2TableResults);
 		} catch (IOException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -273,6 +309,12 @@ public class Merge {
 		return resultsJSON;
 	}
 
+	/**
+	 * Builds the row key filter string based on an id and timestamp
+	 * @param id to be used in filter string
+	 * @param timestamp to be used in filter string
+	 * @return a formatted value to use HBase scan
+	 */
 	private static String buildRowKeyFilterString(String id, String timestamp) {
 
 		StringBuilder sb = new StringBuilder();
@@ -295,6 +337,13 @@ public class Merge {
 		return sb.toString();
 	}
 
+	
+	/**
+	 * Gets the reference for an HTable
+	 * @param tableName name of the table
+	 * @param conf configuration class for connecting to HTable
+	 * @return an hTable reference to the HBase table
+	 */
 	private static HTable getTableReference(String tableName, Configuration conf) {
 		HTable hTable = null;
 		try {
@@ -329,7 +378,7 @@ public class Merge {
 		// Create Scan object for building scan
 		Scan scan = new Scan();
 		scan.setCaching(20);
-		
+
 		// Add families to scan object
 		for (String family : families) {
 			scan.addFamily(Bytes.toBytes(family));
@@ -357,10 +406,17 @@ public class Merge {
 		return scanner;
 	}
 
-	
+	/**
+	 * Merges results from serving layer and both speed layers
+	 * @param servingLayer results from serving layer 
+	 * @param speedLayer results from speed layer
+	 * @param speedLayer2 results form speed layer 2
+	 * @return a Set of the results
+	 * @throws IOException
+	 */
 	private static Set<Reading> mergeSpeedAndServing(
-			ResultScanner servingLayer, ResultScanner speedLayer, ResultScanner speedLayer2)
-			throws IOException {
+			ResultScanner servingLayer, ResultScanner speedLayer,
+			ResultScanner speedLayer2) throws IOException {
 
 		Set<Reading> resultSet = new HashSet<Reading>();
 
@@ -406,7 +462,7 @@ public class Merge {
 		int speedLayerResultsCount = 0;
 		for (Result result = speedLayer.next(); (result != null); result = speedLayer
 				.next()) {
-			
+
 			speedLayerResultsCount++;
 			// gets rowkey
 			String rowKey = Bytes.toString(result.getRow());
@@ -439,14 +495,14 @@ public class Merge {
 			resultSet.add(sensorReading);
 
 		}
-		
-		//Add in speed table 2
+
+		// Add in speed table 2
 		// look up id then look up timestamp if not there add to map. otherwise
 		// skip
 		int speedLayer2ResultsCount = 0;
 		for (Result result = speedLayer2.next(); (result != null); result = speedLayer2
 				.next()) {
-			
+
 			speedLayer2ResultsCount++;
 			// gets rowkey
 			String rowKey = Bytes.toString(result.getRow());
@@ -483,17 +539,28 @@ public class Merge {
 
 		System.out.println("****Summary****");
 		System.out.println("Number in merged results "
-				+ servingLayerResultsCount + speedLayerResultsCount + speedLayer2ResultsCount);
+				+ servingLayerResultsCount + speedLayerResultsCount
+				+ speedLayer2ResultsCount);
 		System.out.println("Number in serving results "
 				+ servingLayerResultsCount);
 		System.out.println("Number in speed results " + speedLayerResultsCount);
-		System.out.println("Number in speed results " + speedLayer2ResultsCount);
+		System.out
+				.println("Number in speed results " + speedLayer2ResultsCount);
 
 		return resultSet;
 	}
+
+	/**
+	 * Merges data from serving layer and both speed layers
+	 * @param servingLayer results from serving layer
+	 * @param speedLayer results from speed layer
+	 * @param speedLayer2 results from speed layer 2
+	 * @return a Set of the results
+	 * @throws IOException
+	 */
 	private static Set<Reading> mergeSpeedAndServingBuilding(
-			ResultScanner servingLayer, ResultScanner speedLayer, ResultScanner speedLayer2)
-			throws IOException {
+			ResultScanner servingLayer, ResultScanner speedLayer,
+			ResultScanner speedLayer2) throws IOException {
 
 		Set<Reading> resultSet = new HashSet<Reading>();
 
@@ -522,22 +589,22 @@ public class Merge {
 			String servingLayerTimestamp = rowKeySplit[1];
 
 			// String rowKeySplit = rowKey.
-			//for column family d of row with rowkey , rowkey, get a map of qualifier (id) to value (sensor Reading)
-			NavigableMap<byte[],byte[]> readingsMap = result.getFamilyMap(
-					Bytes.toBytes("d"));
+			// for column family d of row with rowkey , rowkey, get a map of
+			// qualifier (id) to value (sensor Reading)
+			NavigableMap<byte[], byte[]> readingsMap = result
+					.getFamilyMap(Bytes.toBytes("d"));
 
-			NavigableSet<byte[]> servingLayerRowSensorIDList = readingsMap.descendingKeySet();
-			
-			for(byte[] id : servingLayerRowSensorIDList)
-			{
-				//get id and value
+			NavigableSet<byte[]> servingLayerRowSensorIDList = readingsMap
+					.descendingKeySet();
+
+			for (byte[] id : servingLayerRowSensorIDList) {
+				// get id and value
 				String servingLayerValue = Bytes.toString(readingsMap.get(id));
 				String servingLayerSensorId = Bytes.toString(id);
-				
+
 				// Create Reading object
 				Reading sensorReading = new Reading(servingLayerSensorId,
 						servingLayerTimestamp, servingLayerValue);
-				
 
 				// Add to set
 				resultSet.add(sensorReading);
@@ -549,7 +616,7 @@ public class Merge {
 		int speedLayerResultsCount = 0;
 		for (Result result = speedLayer.next(); (result != null); result = speedLayer
 				.next()) {
-			
+
 			speedLayerResultsCount++;
 			// gets rowkey
 			String rowKey = Bytes.toString(result.getRow());
@@ -570,36 +637,36 @@ public class Merge {
 			String speedLayerTimestamp = rowKeySplit[1];
 
 			// String rowKeySplit = rowKey.
-			//for column family d of row with rowkey , rowkey, get a map of qualifier (id) to value (sensor Reading)
-			NavigableMap<byte[],byte[]> readingsMap = result.getFamilyMap(
-					Bytes.toBytes("d"));
+			// for column family d of row with rowkey , rowkey, get a map of
+			// qualifier (id) to value (sensor Reading)
+			NavigableMap<byte[], byte[]> readingsMap = result
+					.getFamilyMap(Bytes.toBytes("d"));
 
-			NavigableSet<byte[]> speedLayerRowSensorIDList = readingsMap.descendingKeySet();
-			
-			for(byte[] id : speedLayerRowSensorIDList)
-			{
-				//get id and value
+			NavigableSet<byte[]> speedLayerRowSensorIDList = readingsMap
+					.descendingKeySet();
+
+			for (byte[] id : speedLayerRowSensorIDList) {
+				// get id and value
 				String speedLayerValue = Bytes.toString(readingsMap.get(id));
 				String speedLayerSensorId = Bytes.toString(id);
-				
+
 				// Create Reading object
 				Reading sensorReading = new Reading(speedLayerSensorId,
 						speedLayerTimestamp, speedLayerValue);
-				
 
 				// Add to set
 				resultSet.add(sensorReading);
 			}
 
 		}
-		
-		//Add in speed table 2
+
+		// Add in speed table 2
 		// look up id then look up timestamp if not there add to map. otherwise
 		// skip
 		int speedLayer2ResultsCount = 0;
 		for (Result result = speedLayer2.next(); (result != null); result = speedLayer2
 				.next()) {
-			
+
 			speedLayer2ResultsCount++;
 			// gets rowkey
 			String rowKey = Bytes.toString(result.getRow());
@@ -621,22 +688,22 @@ public class Merge {
 			String speedLayer2Timestamp = rowKeySplit[1];
 
 			// String rowKeySplit = rowKey.
-			//for column family d of row with rowkey , rowkey, get a map of qualifier (id) to value (sensor Reading)
-			NavigableMap<byte[],byte[]> readingsMap = result.getFamilyMap(
-					Bytes.toBytes("d"));
+			// for column family d of row with rowkey , rowkey, get a map of
+			// qualifier (id) to value (sensor Reading)
+			NavigableMap<byte[], byte[]> readingsMap = result
+					.getFamilyMap(Bytes.toBytes("d"));
 
-			NavigableSet<byte[]> speedLayer2RowSensorIDList = readingsMap.descendingKeySet();
-			
-			for(byte[] id : speedLayer2RowSensorIDList)
-			{
-				//get id and value
+			NavigableSet<byte[]> speedLayer2RowSensorIDList = readingsMap
+					.descendingKeySet();
+
+			for (byte[] id : speedLayer2RowSensorIDList) {
+				// get id and value
 				String speedLayer2Value = Bytes.toString(readingsMap.get(id));
 				String speedLayer2SensorId = Bytes.toString(id);
-				
+
 				// Create Reading object
 				Reading sensorReading = new Reading(speedLayer2SensorId,
 						speedLayer2Timestamp, speedLayer2Value);
-				
 
 				// Add to set
 				resultSet.add(sensorReading);
@@ -646,15 +713,22 @@ public class Merge {
 
 		System.out.println("****Summary****");
 		System.out.println("Number in merged results "
-				+ servingLayerResultsCount + speedLayerResultsCount + speedLayer2ResultsCount);
+				+ servingLayerResultsCount + speedLayerResultsCount
+				+ speedLayer2ResultsCount);
 		System.out.println("Number in serving results "
 				+ servingLayerResultsCount);
 		System.out.println("Number in speed results " + speedLayerResultsCount);
-		System.out.println("Number in speed results " + speedLayer2ResultsCount);
+		System.out
+				.println("Number in speed results " + speedLayer2ResultsCount);
 
 		return resultSet;
 	}
-	
+
+	/**
+	 * Converts a Set to JSONarray
+	 * @param resultSet Set of results
+	 * @return a JSONArray of data
+	 */
 	private static JSONArray toJSON(Set<Reading> resultSet) {
 		JSONArray resultsArray = new JSONArray();
 
