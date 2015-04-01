@@ -25,7 +25,6 @@ public class MergeLayerREST extends HttpServlet {
 	 */
 	public MergeLayerREST() {
 		super();
-		// TODO Auto-generated constructor stub
 	}
 
 	/**
@@ -34,8 +33,6 @@ public class MergeLayerREST extends HttpServlet {
 	 */
 	protected void doGet(HttpServletRequest request,
 			HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-		// TODO Auto-generated method stub
 
 		JSONArray requestResponse = null;
 
@@ -77,9 +74,10 @@ public class MergeLayerREST extends HttpServlet {
 				}
 
 			}
-			// get first value
 			requestResponse = new JSONArray();
 
+			// if sensor id was requested loop through and get data for each
+			// sensor
 			if (sensorIdRequested.size() > 0) {
 				for (int i = 0; i < sensorIdRequested.size(); i++) {
 					JSONArray newRequestResponse = com.se4450.merge.Merge
@@ -91,12 +89,14 @@ public class MergeLayerREST extends HttpServlet {
 							requestResponse.put(newRequestResponse
 									.getJSONObject(j));
 						} catch (JSONException e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 					}
 				}
-			} else {
+			}
+			// no sensor means a building id was requested so get all data for
+			// building
+			else {
 				requestResponse = com.se4450.merge.Merge.queryBuildingData(
 						buildingID, startRowKeyRequested, endRowKeyRequeted);
 			}
@@ -110,14 +110,4 @@ public class MergeLayerREST extends HttpServlet {
 
 		out.flush();
 	}
-
-	/**
-	 * @see HttpServlet#doPost(HttpServletRequest request, HttpServletResponse
-	 *      response)
-	 */
-	protected void doPost(HttpServletRequest request,
-			HttpServletResponse response) throws ServletException, IOException {
-		// TODO Auto-generated method stub
-	}
-
 }
