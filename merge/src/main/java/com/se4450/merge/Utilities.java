@@ -12,8 +12,6 @@ public class Utilities {
 		config.set("hbase.local.dir", "/home/hduser/hbase/local");
 		config.set("hbase.master.info.port", "6010");
 		config.set("hbase.zookeeper.quorum", "zookeeper-1,zookeeper-2,zookeeper-3,");
-//		config.set("hbase.zookeeper.property.clientPort", "2181");
-//		config.set("hbase.master", "192.168.66.60:60000");
 		return config;
 	}
 

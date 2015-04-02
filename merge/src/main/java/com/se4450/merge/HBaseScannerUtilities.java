@@ -51,12 +51,12 @@ public final class HBaseScannerUtilities {
 
 		String endRowKeyString = null;
 
-		if (timestampEnd != null) {
+		if (timestampEnd != null && timestampEnd != "") {
 			// format to ensure data at current timestamp is retrieved
 			timestampEnd = formatTimestampEnd(timestampEnd);
 		} else {
 			// format to ensure all data for the given timestamp isretrieved
-			id = formatSensorId(id);
+			id = formatId(id);
 		}
 
 		endRowKeyString = buildRowKeyFilterString(id, timestampEnd);
@@ -73,7 +73,7 @@ public final class HBaseScannerUtilities {
 	 */
 	public static String formatTimestampStart(String timestamp) {
 
-		if (timestamp != null)
+		if (timestamp != null && timestamp != "")
 			timestamp = String.format("%013d", Long.parseLong(timestamp));
 		return timestamp;
 	}
@@ -88,33 +88,37 @@ public final class HBaseScannerUtilities {
 	 */
 	public static String formatTimestampEnd(String timestamp) {
 
+		if (timestamp == null || timestamp == "")
+			return timestamp;
+
 		timestamp = String.format("%013d", Long.parseLong(timestamp) + 1);
 
 		return timestamp;
 	}
 
 	/**
-	 * Formats a sensorId to be used as the end bound filter string in HBase
-	 * scan. Adds 1 to sensorId and a dash delimiter.
+	 * Formats an id to be used as the end bound filter string in HBase scan.
+	 * Adds 1 to sensorId and a dash delimiter.
 	 * 
 	 * @param id
 	 *            to be formated
 	 * @return a formated string to be used in HBase scan
 	 */
-	public static String formatSensorId(String id) {
-
-		id = String.valueOf((Long.parseLong(id) + 1) + "-");
-
+	public static String formatId(String id) {
+		if (id != null && id != "") {
+			id = String.valueOf((Long.parseLong(id) + 1) + "-");
+		}
 		return id;
 	}
 
 	/**
-	 * Builds the row key filter string based on an id and timestamp
+	 * Builds the row key filter string based on an id and timestamp. Does not
+	 * manipulate parameters.
 	 * 
 	 * @param id
 	 *            to be used in filter string
 	 * @param timestamp
-	 *            to be used in filter string
+	 *            to be used in filter string. Already formatted
 	 * @return a formatted value to use HBase scan
 	 */
 	public static String buildRowKeyFilterString(String id, String timestamp) {
@@ -122,10 +126,10 @@ public final class HBaseScannerUtilities {
 		StringBuilder sb = new StringBuilder();
 
 		// if no id present then return null as all data should be retrieved
-		if (id == null)
-			return null;
+		if (id == null || id == "")
+			return id;
 		// id and timestamp
-		else if (timestamp != null) {
+		else if (timestamp != null && timestamp != "") {
 
 			sb.append(id);
 			sb.append("-");
