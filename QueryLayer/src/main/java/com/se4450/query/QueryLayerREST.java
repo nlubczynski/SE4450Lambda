@@ -2,7 +2,6 @@ package com.se4450.query;
 
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -37,55 +36,30 @@ public class QueryLayerREST extends HttpServlet {
 			HttpServletResponse response) throws ServletException, IOException {
 
 		Query query = new Query();
-		
+
 		JSONArray requestResponse = null;
 
 		String queryString = request.getQueryString();
-		String[] queryParameters = null;
+
+		QueryParameter queryParameter = new QueryParameter();
+		queryParameter.parseQueryString(queryString);
 
 		// if there was no query parameter get all data
-		if (queryString == null || queryString.isEmpty()) {
+		if (queryParameter.isEmpty()) {
 			requestResponse = query.queryAllData();
 		}
 
 		// if there was a query parameter parse and build query
 		else {
-			queryParameters = queryString.split("&");
-			ArrayList<String> sensorIdRequested = new ArrayList<String>();
-			String startRowKeyRequested = null;
-			String endRowKeyRequeted = null;
-			String buildingID = null;
-
-			for (String parameter : queryParameters) {
-				String[] parameterSplit = parameter.split("=");
-
-				String parameterId = parameterSplit[0];
-				String parameterValue = parameterSplit[1];
-
-				if (parameterId.equals("sensorID")) {
-					String[] idList = parameterValue.split(",");
-					for (String id : idList) {
-
-						sensorIdRequested.add(id);
-					}
-
-				} else if (parameterId.equals("start")) {
-					startRowKeyRequested = parameterValue;
-				} else if (parameterId.equals("end")) {
-					endRowKeyRequeted = parameterValue;
-				} else if (parameterId.equals("buildingID")) {
-					buildingID = parameterValue;
-				}
-
-			}
 			requestResponse = new JSONArray();
 
 			// if sensor id was requested loop through and get data for each
 			// sensor
-			if (sensorIdRequested.size() > 0) {
-				for (int i = 0; i < sensorIdRequested.size(); i++) {
-					JSONArray newRequestResponse = query.querySensorData(sensorIdRequested.get(i),
-									startRowKeyRequested, endRowKeyRequeted);
+			if (queryParameter.getSensorIDList().size() > 0) {
+				for (int i = 0; i < queryParameter.getSensorIDList().size(); i++) {
+					JSONArray newRequestResponse = query.querySensorData(
+							queryParameter.getSensorIDList().get(i),
+							queryParameter.getStart(), queryParameter.getEnd());
 
 					for (int j = 0; j < newRequestResponse.length(); j++) {
 						try {
@@ -101,7 +75,8 @@ public class QueryLayerREST extends HttpServlet {
 			// building
 			else {
 				requestResponse = query.queryBuildingData(
-						buildingID, startRowKeyRequested, endRowKeyRequeted);
+						queryParameter.getBuildingID(),
+						queryParameter.getStart(), queryParameter.getEnd());
 			}
 		}
 
