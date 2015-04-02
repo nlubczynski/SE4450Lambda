@@ -18,8 +18,22 @@ public class QueryParameter {
 		m_end = null;
 	}
 
+	public boolean isCorrectlyFormatted() {
+
+		if (m_sensorIDList.size() != 0
+				&& (m_buildingID != null && m_buildingID != ""))
+			return false;
+
+		if ((m_start == null || m_start == "")
+				|| (m_end == null || m_end == ""))
+			return false;
+
+		return true;
+	}
+
 	public boolean isEmpty() {
-		if (m_sensorIDList.size() == 0 && (m_buildingID == null || m_buildingID == ""))
+		if (m_sensorIDList.size() == 0
+				&& (m_buildingID == null || m_buildingID == ""))
 			return true;
 
 		return false;

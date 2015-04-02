@@ -11,6 +11,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.json.JSONArray;
 import org.json.JSONException;
+import org.json.JSONObject;
 
 import com.se4450.merge.Query;
 
@@ -44,6 +45,25 @@ public class QueryLayerREST extends HttpServlet {
 		QueryParameter queryParameter = new QueryParameter();
 		queryParameter.parseQueryString(queryString);
 
+		if(!queryParameter.isCorrectlyFormatted())
+		{
+			JSONObject obj= null;
+			try {
+				obj = new JSONObject("Incorrectly Formatted Query String: <buildingID || sensorID> & <start> & <end>");
+			} catch (JSONException e) {
+				e.printStackTrace();
+			}
+
+			response.setContentType("application/json");
+
+			PrintWriter out = response.getWriter();
+
+			out.println(obj);
+
+			out.flush();
+			
+			return;
+		}
 		// if there was no query parameter get all data
 		if (queryParameter.isEmpty()) {
 			requestResponse = query.queryAllData();
