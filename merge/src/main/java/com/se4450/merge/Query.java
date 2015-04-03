@@ -36,8 +36,10 @@ public class Query {
 	public JSONArray querySensorData(String sensorId, String timestampStart,
 			String timestampEnd) {
 
-		m_rowKeyStart = HBaseScannerUtilities.formatStartRowKeyString(sensorId, timestampStart);
-		m_rowKeyEnd = HBaseScannerUtilities.formatEndRowKeyString(sensorId, timestampEnd);
+		m_rowKeyStart = HBaseScannerUtilities.formatStartRowKeyString(sensorId,
+				timestampStart);
+		m_rowKeyEnd = HBaseScannerUtilities.formatEndRowKeyString(sensorId,
+				timestampEnd);
 
 		Set<Reading> resultSet = getData(m_rowKeyStart, m_rowKeyEnd);
 
@@ -70,10 +72,12 @@ public class Query {
 	public JSONArray queryBuildingData(String buildingID,
 			String timestampStart, String timestampEnd) {
 
-		m_rowKeyEnd = HBaseScannerUtilities.formatStartRowKeyString(buildingID, timestampStart);
-		m_rowKeyEnd = HBaseScannerUtilities.formatEndRowKeyString(buildingID, timestampEnd);
+		m_rowKeyStart = HBaseScannerUtilities.formatStartRowKeyString(
+				buildingID, timestampStart);
+		m_rowKeyEnd = HBaseScannerUtilities.formatEndRowKeyString(buildingID,
+				timestampEnd);
 
-		Set<Reading> resultSet = getBuildingData(m_rowKeyEnd, m_rowKeyEnd);
+		Set<Reading> resultSet = getBuildingData(m_rowKeyStart, m_rowKeyEnd);
 
 		return Reading.toJSON(resultSet);
 	}
@@ -92,11 +96,13 @@ public class Query {
 		conf = Utilities.loadHBaseConfiguration(conf);
 
 		// get table references
-		HTable servingLayerTable = HBaseScannerUtilities.getTableReference("BuildingServingLayer",
-				conf);
-		HTable speedLayerTable = HBaseScannerUtilities.getTableReference("BuildingSpeedLayer", conf);
+		HTable servingLayerTable = HBaseScannerUtilities.getTableReference(
+				"BuildingServingLayer", conf);
+		HTable speedLayerTable = HBaseScannerUtilities.getTableReference(
+				"BuildingSpeedLayer", conf);
 
-		HTable speedLayerTable2 = HBaseScannerUtilities.getTableReference("BuildingSpeedLayer2", conf);
+		HTable speedLayerTable2 = HBaseScannerUtilities.getTableReference(
+				"BuildingSpeedLayer2", conf);
 
 		// default families
 		ArrayList<String> families = new ArrayList<String>();
@@ -113,8 +119,9 @@ public class Query {
 		Set<Reading> results = null;
 
 		try {
-			results = Merge.mergeSpeedAndServingBuilding(servingLayerTableResults,
-					speedLayerTableResults, speedLayer2TableResults);
+			results = Merge.mergeSpeedAndServingBuilding(
+					servingLayerTableResults, speedLayerTableResults,
+					speedLayer2TableResults);
 		} catch (IOException e1) {
 			e1.printStackTrace();
 			System.out.println("Could not print out results");
@@ -158,11 +165,11 @@ public class Query {
 		// get table references
 		HTable servingLayerTable = HBaseScannerUtilities.getTableReference(
 				"SensorValuesServingLayer", conf);
-		HTable speedLayerTable = HBaseScannerUtilities.getTableReference("SensorValuesSpeedLayer",
-				conf);
+		HTable speedLayerTable = HBaseScannerUtilities.getTableReference(
+				"SensorValuesSpeedLayer", conf);
 
-		HTable speedLayerTable2 = HBaseScannerUtilities.getTableReference("SensorValuesSpeedLayer2",
-				conf);
+		HTable speedLayerTable2 = HBaseScannerUtilities.getTableReference(
+				"SensorValuesSpeedLayer2", conf);
 
 		// default families
 		ArrayList<String> families = new ArrayList<String>();
@@ -202,8 +209,6 @@ public class Query {
 
 		return results;
 	}
-
-	
 
 	/**
 	 * This method scans an HBase table
@@ -251,7 +256,5 @@ public class Query {
 
 		return scanner;
 	}
-
-	
 
 }
