@@ -37,8 +37,9 @@ public class WriteToHbase {
 
 			String mapKey = tokenArray[0];
 			String mapValue = tokenArray[1];
-
-			context.write(new Text(mapKey), new Text(mapValue)); // create a
+			
+			//Emit key value pair
+			context.write(new Text(mapKey), new Text(mapValue));
 		}
 	}
 
@@ -55,6 +56,7 @@ public class WriteToHbase {
 				put.add(Bytes.toBytes("d"), Bytes.toBytes("val"),
 						Bytes.toBytes(value.toString()));
 
+				//Write to HBase
 				context.write(key, put);
 			}
 		}
@@ -101,7 +103,6 @@ public class WriteToHbase {
 				Reduce.class, job);
 
 		job.setReducerClass(Reduce.class);
-		job.waitForCompletion(true);
 
 		// Wait till job completion
 		System.exit(job.waitForCompletion(true) ? 0 : 1);
