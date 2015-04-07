@@ -19,6 +19,14 @@ namespace FrontEndApp.Models
             this.Value = sensorReading.Value;
         }
 
+        public SensorReading(int sensorId, DateTime time, int value)
+        {
+            this.ID = 0;
+            this.SensorId = sensorId;
+            this.Time = time;
+            this.Value = value;
+        }
+
         public int ID { get; set; }
         public int SensorId { get; set; }
         public DateTime Time { get; set; }
