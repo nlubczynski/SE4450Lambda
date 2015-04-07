@@ -72,21 +72,18 @@ public class Reading {
 		try {
 			obj.put("sensorID", this.m_id);
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			System.out.println(e.getMessage());
 		}
 		try {
 			obj.put("timestamp", this.m_timestamp);
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			System.out.println(e.getMessage());
 		}
 		try {
 			obj.put("value", this.m_value);
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 			System.out.println(e.getMessage());
 		}
