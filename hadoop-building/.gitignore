@@ -1,0 +1,4 @@
+/target/
+/JarFiles/
+/JarFiles/*
+/dependency-reduced-pom.xml
