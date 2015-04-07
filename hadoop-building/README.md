@@ -1,3 +1,2 @@
-# Batch Layer  
-Batch Layer code files for Lambda Data Processing System. This is for SE 4450 Design, Faculty of Engineering, Western University
-For more information on the origins of the project visit lambda-architecture.net/
+# MapReduce Job  
+This is an implmentation of a MapReduce job that will be used to create the Serving Layer
