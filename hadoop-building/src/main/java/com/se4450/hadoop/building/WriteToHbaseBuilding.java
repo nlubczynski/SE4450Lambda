@@ -24,7 +24,7 @@ public class WriteToHbaseBuilding {
 
 	public static class Map extends Mapper<LongWritable, Text, Text, Text> {
 
-		// format of hdfs line: id-time reading building id
+		// format of hdfs line: id-time reading building_id
 		// sensorId-timestamp value
 
 		public void map(LongWritable key, Text value, Context context)
@@ -50,7 +50,8 @@ public class WriteToHbaseBuilding {
 
 			String mapValue = sensorID + " " + sensorReading;
 			String keyValue = buildingID + "-" + timestamp;
-
+			
+			//Emit key value pair
 			context.write(new Text(keyValue), new Text(mapValue));
 		}
 	}
@@ -71,7 +72,8 @@ public class WriteToHbaseBuilding {
 				Put put = new Put(Bytes.toBytes(key.toString()));
 				put.add(Bytes.toBytes("d"), Bytes.toBytes(sensorID),
 						Bytes.toBytes(reading));
-
+				
+				//Write to HBase
 				context.write(key, put);
 			}
 		}
@@ -98,7 +100,7 @@ public class WriteToHbaseBuilding {
 				conf.set(value.getKey(), value.getValue().toString());
 			}
 		}
-		// create a job with name "Write to HBase "
+		// create a job
 		Job job = new Job(conf, "write to hbase-building");
 		job.setJarByClass(WriteToHbaseBuilding.class);
 		job.setMapperClass(Map.class);
@@ -118,8 +120,7 @@ public class WriteToHbaseBuilding {
 				Reduce.class, job);
 
 		job.setReducerClass(Reduce.class);
-		job.waitForCompletion(true);
-
+	
 		// Wait till job completion
 		System.exit(job.waitForCompletion(true) ? 0 : 1);
 	}
